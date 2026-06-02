@@ -227,7 +227,7 @@ include 'sidebar.php';
                 <table class="table-spec">
                     <tr><td><b>Người phụ trách (PIC):</b></td><td><span class="badge bg-info"><i class="fa-solid fa-user-gear"></i> <?= htmlspecialchars($ship['pic']) ?></span></td></tr>
                     <tr><td><b>Nhóm phụ trách:</b></td><td><span class="badge bg-secondary"><?= htmlspecialchars($ship['group_name']) ?></span></td></tr>
-                    <tr><td><b>Phân loại tàu:</b></td><td><span class="badge bg-dark"><?= htmlspecialchars($ship['ship_type']) ?></span></td></tr>
+                   <tr><td><b>Phân loại tàu:</b></td><td><span class="badge bg-dark"><?= h($ship['ship_type'] ?? 'Chưa cập nhật') ?></span></td></tr>
                     <tr><td><b>Nhà máy (Fac):</b></td><td><?= htmlspecialchars($ship['fac'] ?? 'N/A') ?></td></tr>
                     <tr><td><b>Trạng thái tàu:</b></td><td><?= htmlspecialchars($ship['status']) ?></td></tr>
                     <tr><td><b>Ngày Event bắt đầu:</b></td><td><i class="fa-solid fa-calendar-day"></i> <?= $ship['start_date'] ? htmlspecialchars($ship['start_date']) : '---' ?></td></tr>
