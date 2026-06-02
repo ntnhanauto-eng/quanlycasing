@@ -2,9 +2,13 @@
 session_start();
 require_once 'db_connect.php';
 
-// --- 0. KIỂM TRA ĐĂNG NHẬP ---
+// --- 0. XỬ LÝ REDIRECT & USER TRANG HIỆN TẠI ---
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+$actual_link = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
 $is_logged_in = isset($_SESSION['user']) && !empty($_SESSION['user']);
 $is_admin = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
+$display_name = $is_logged_in ? (!empty($_SESSION['fullname']) ? $_SESSION['fullname'] : $_SESSION['user']) : 'Khách';
 $user_fullname = $_SESSION['fullname'] ?? '';
 
 // --- 1. LẤY DANH SÁCH TÀU ĐỂ LỌC ---
@@ -15,7 +19,6 @@ $selected_ship_id = $_GET['ship_id'] ?? '';
 $ship = null;
 $compare_ships_data = [];
 $stats = [
-    'inspection_count' => 0, // Số mục kiểm tra
     'remain_chua_lam' => 0,
     'remain_dang_lam' => 0,
     'remain_da_xong' => 0,
@@ -51,7 +54,6 @@ if ($selected_ship_id) {
             $parts = explode('_', $current_name);
             $current_prefix = trim($parts[0]);
         } else {
-            // Nếu tên tàu không có dấu gạch dưới, lấy 2 ký tự đầu tiên làm tiền tố mặc định
             $current_prefix = substr($current_name, 0, 2);
         }
 
@@ -65,17 +67,11 @@ if ($selected_ship_id) {
                 ORDER BY s.project_name ASC
             ";
             $type_stmt = $conn->prepare($compare_sql);
-            // Ký tự % ở sau đại diện cho việc tìm kiếm chuỗi bắt đầu bằng tiền tố vừa tách
             $type_stmt->execute([$current_type, $current_prefix . '%']);
             $compare_ships_data = $type_stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        // C. Lấy tổng số lượng Hạng mục kiểm tra (bảng inspection_items)
-        $insp_stmt = $conn->prepare("SELECT item_count FROM inspection_items WHERE ship_id = ?");
-        $insp_stmt->execute([$selected_ship_id]);
-        $stats['inspection_count'] = (int)($insp_stmt->fetchColumn() ?: 0);
-
-        // D. Thống kê trạng thái hạng mục tồn đọng (Remain Jobs)
+        // C. Thống kê trạng thái hạng mục tồn đọng (Remain Jobs)
         $remain_stmt = $conn->prepare("SELECT status, COUNT(*) as qty FROM remain_jobs WHERE ship_id = ? GROUP BY status");
         $remain_stmt->execute([$selected_ship_id]);
         while ($row = $remain_stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -84,7 +80,7 @@ if ($selected_ship_id) {
             if ($row['status'] == 'Đã xong') $stats['remain_da_xong'] = $row['qty'];
         }
 
-        // E. Thống kê trạng thái hạng mục sửa đổi (Comments)
+        // D. Thống kê trạng thái hạng mục sửa đổi (Comments)
         $comment_stmt = $conn->prepare("SELECT status, COUNT(*) as qty FROM ship_comments WHERE ship_id = ? GROUP BY status");
         $comment_stmt->execute([$selected_ship_id]);
         while ($row = $comment_stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -93,7 +89,7 @@ if ($selected_ship_id) {
             if ($row['status'] == 'Đã xong') $stats['comment_da_xong'] = $row['qty'];
         }
 
-        // F. Thống kê trạng thái hạng mục hiệu chỉnh (Revises)
+        // E. Thống kê trạng thái hạng mục hiệu chỉnh (Revises)
         $revise_stmt = $conn->prepare("SELECT status, COUNT(*) as qty FROM ship_revises WHERE ship_id = ? GROUP BY status");
         $revise_stmt->execute([$selected_ship_id]);
         while ($row = $revise_stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -229,11 +225,9 @@ include 'sidebar.php';
                     </div>
                 </div>
                 <table class="table-spec">
-                    <tr><td><b>Quyền PIC phụ trách:</b></td><td><span class="badge bg-info"><i class="fa-solid fa-user-gear"></i> <?= htmlspecialchars($ship['pic']) ?></span></td></tr>
-                    <tr><td><b>Phân nhóm tổ đội:</b></td><td><span class="badge bg-secondary"><?= htmlspecialchars($ship['group_name']) ?></span></td></tr>
-                    
+                    <tr><td><b>Người phụ trách (PIC):</b></td><td><span class="badge bg-info"><i class="fa-solid fa-user-gear"></i> <?= htmlspecialchars($ship['pic']) ?></span></td></tr>
+                    <tr><td><b>Nhóm phụ trách:</b></td><td><span class="badge bg-secondary"><?= htmlspecialchars($ship['group_name']) ?></span></td></tr>
                     <tr><td><b>Phân loại tàu:</b></td><td><span class="badge bg-dark"><?= htmlspecialchars($ship['ship_type']) ?></span></td></tr>
-                    
                     <tr><td><b>Nhà máy (Fac):</b></td><td><?= htmlspecialchars($ship['fac'] ?? 'N/A') ?></td></tr>
                     <tr><td><b>Trạng thái tàu:</b></td><td><?= htmlspecialchars($ship['status']) ?></td></tr>
                     <tr><td><b>Ngày Event bắt đầu:</b></td><td><i class="fa-solid fa-calendar-day"></i> <?= $ship['start_date'] ? htmlspecialchars($ship['start_date']) : '---' ?></td></tr>
@@ -246,7 +240,7 @@ include 'sidebar.php';
             <table class="table-spec" style="min-width: 100%;">
                 <thead>
                     <tr>
-                        <th>HẠNG MỤC NGHIỆP VỤ</th>
+                        <th>HẠNG MỤC SẢN XUẤT</th>
                         <th style="text-align: center;">TỔNG SỐ LƯỢNG</th>
                         <th style="text-align: center;">CHƯA LÀM / THIẾT LẬP</th>
                         <th style="text-align: center;">ĐANG TRIỂN KHAI</th>
@@ -254,13 +248,6 @@ include 'sidebar.php';
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><b>📋 Hạng mục kiểm tra (Inspection Items)</b></td>
-                        <td style="text-align: center;"><span class="badge bg-info"><?= $stats['inspection_count'] ?></span></td>
-                        <td style="text-align: center; color: #999;">---</td>
-                        <td style="text-align: center; color: #999;">---</td>
-                        <td style="text-align: center; color: #999;">---</td>
-                    </tr>
                     <tr>
                         <td><b>🚧 Công việc tồn động (Remain Jobs)</b></td>
                         <td style="text-align: center; font-weight: bold;"><?= array_sum([$stats['remain_chua_lam'], $stats['remain_dang_lam'], $stats['remain_da_xong']]) ?></td>
