@@ -52,6 +52,7 @@
 <a href="remain-jobs.php">⏳ Remain Jobs</a>  
 <a href="comment.php">💬 Comments</a>  
 <a href="revise.php">🔄 Revise</a>  
+<a href="bao-cao-tong-hop.php">📊 Báo cáo tổng hợp </a>
   
 
 <!-- HỆ THỐNG -->  
