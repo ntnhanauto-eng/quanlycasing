@@ -13,10 +13,9 @@ $selected_ship_id = $_GET['ship_id'] ?? '';
 
 // Khởi tạo các biến chứa dữ liệu báo cáo
 $ship = null;
-$type_ships_data = [];
+$compare_ships_data = [];
 $stats = [
-    'vattu_count' => 0,
-    'ghichu_count' => 0,
+    'inspection_count' => 0, // Số mục kiểm tra
     'remain_chua_lam' => 0,
     'remain_dang_lam' => 0,
     'remain_da_xong' => 0,
@@ -43,28 +42,38 @@ if ($selected_ship_id) {
     $ship = $ship_stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($ship) {
-        $current_type = $ship['ship_type']; // Lấy loại tàu (Ví dụ: 50K, 115K)
+        $current_name = $ship['project_name'];
+        $current_type = $ship['ship_type']; // Loại tàu (Ví dụ: 50K, 115K...)
 
-        // B. Lấy dữ liệu toàn bộ các tàu CÙNG LOẠI TÀU để vẽ biểu đồ so sánh sê-ri
+        // Thuật toán tách chuỗi lấy ký hiệu đứng trước dấu gạch dưới (Ví dụ: EC_50K -> lấy EC)
+        $current_prefix = '';
+        if (strpos($current_name, '_') !== false) {
+            $parts = explode('_', $current_name);
+            $current_prefix = trim($parts[0]);
+        } else {
+            // Nếu tên tàu không có dấu gạch dưới, lấy 2 ký tự đầu tiên làm tiền tố mặc định
+            $current_prefix = substr($current_name, 0, 2);
+        }
+
+        // B. TRUY VẤN ĐỒ THỊ: Lọc các tàu thỏa cả 2 tiêu chí (Cùng tiền tố tên tàu VÀ Cùng loại tải trọng tàu)
         if (!empty($current_type)) {
-            $type_stmt = $conn->prepare("
+            $compare_sql = "
                 SELECT s.id, s.project_name, s.man_hours,
                     (SELECT COALESCE(SUM(dr.worker_count), 0) * 8 FROM daily_reports dr WHERE dr.ship_id = s.id) as actual_hours
                 FROM ships s
-                WHERE s.ship_type = ?
+                WHERE s.ship_type = ? AND s.project_name LIKE ?
                 ORDER BY s.project_name ASC
-            ");
-            $type_stmt->execute([$current_type]);
-            $type_ships_data = $type_stmt->fetchAll(PDO::FETCH_ASSOC);
+            ";
+            $type_stmt = $conn->prepare($compare_sql);
+            // Ký tự % ở sau đại diện cho việc tìm kiếm chuỗi bắt đầu bằng tiền tố vừa tách
+            $type_stmt->execute([$current_type, $current_prefix . '%']);
+            $compare_ships_data = $type_stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        // C. Thống kê số lượng vật tư & ghi chú kỹ thuật
-        $mat_stmt = $conn->prepare("SELECT type, COUNT(*) as qty FROM materials_notes WHERE ship_id = ? GROUP BY type");
-        $mat_stmt->execute([$selected_ship_id]);
-        while ($row = $mat_stmt->fetch(PDO::FETCH_ASSOC)) {
-            if ($row['type'] == 'vattu') $stats['vattu_count'] = $row['qty'];
-            if ($row['type'] == 'ghichu') $stats['ghichu_count'] = $row['qty'];
-        }
+        // C. Lấy tổng số lượng Hạng mục kiểm tra (bảng inspection_items)
+        $insp_stmt = $conn->prepare("SELECT item_count FROM inspection_items WHERE ship_id = ?");
+        $insp_stmt->execute([$selected_ship_id]);
+        $stats['inspection_count'] = (int)($insp_stmt->fetchColumn() ?: 0);
 
         // D. Thống kê trạng thái hạng mục tồn đọng (Remain Jobs)
         $remain_stmt = $conn->prepare("SELECT status, COUNT(*) as qty FROM remain_jobs WHERE ship_id = ? GROUP BY status");
@@ -146,7 +155,7 @@ include 'sidebar.php';
 
 <div class="container">
     <div class="header-section">
-        <h2>📊 BÁO CÁO TỔNG HỢP & PHÂN TÍCH THEO PHÂN LOẠI TÀU</h2>
+        <h2>📊 BÁO CÁO TỔNG HỢP & PHÂN TÍCH DỰ ÁN</h2>
     </div>
 
     <div class="filter-box">
@@ -200,13 +209,13 @@ include 'sidebar.php';
 
         <div class="report-layout">
             <div class="chart-panel">
-                <h3 class="panel-title"><i class="fa-solid fa-chart-bar"></i> Biểu đồ sê-ri so sánh các tàu cùng phân loại (LOẠI TÀU: <?= htmlspecialchars($ship['ship_type'] ?: 'N/A') ?>)</h3>
-                <?php if (count($type_ships_data) > 1): ?>
+                <h3 class="panel-title"><i class="fa-solid fa-chart-bar"></i> Biểu đồ sê-ri đồng nhóm dữ liệu (Ký hiệu: <?= htmlspecialchars($current_prefix) ?>_ | Phân loại: <?= htmlspecialchars($ship['ship_type']) ?>)</h3>
+                <?php if (count($compare_ships_data) > 1): ?>
                     <div class="chart-container">
-                        <canvas id="typeCompareChart"></canvas>
+                        <canvas id="seriesCompareChart"></canvas>
                     </div>
                 <?php else: ?>
-                    <p style="text-align: center; color: #888; padding-top: 100px;">Không tìm thấy tàu khác có cùng phân loại tàu để vẽ biểu đồ so sánh.</p>
+                    <p style="text-align: center; color: #888; padding-top: 100px;">Không tìm thấy tàu khác có cùng ký hiệu tiền tố và phân loại tải trọng để vẽ biểu đồ so sánh.</p>
                 <?php endif; ?>
             </div>
 
@@ -222,7 +231,9 @@ include 'sidebar.php';
                 <table class="table-spec">
                     <tr><td><b>Quyền PIC phụ trách:</b></td><td><span class="badge bg-info"><i class="fa-solid fa-user-gear"></i> <?= htmlspecialchars($ship['pic']) ?></span></td></tr>
                     <tr><td><b>Phân nhóm tổ đội:</b></td><td><span class="badge bg-secondary"><?= htmlspecialchars($ship['group_name']) ?></span></td></tr>
-                    <tr><td><b>Phân loại tàu:</b></td><td><span class="badge bg-dark">Loại <?= htmlspecialchars($ship['ship_type']) ?></span></td></tr>
+                    
+                    <tr><td><b>Phân loại tàu:</b></td><td><span class="badge bg-dark"><?= htmlspecialchars($ship['ship_type']) ?></span></td></tr>
+                    
                     <tr><td><b>Nhà máy (Fac):</b></td><td><?= htmlspecialchars($ship['fac'] ?? 'N/A') ?></td></tr>
                     <tr><td><b>Trạng thái tàu:</b></td><td><?= htmlspecialchars($ship['status']) ?></td></tr>
                     <tr><td><b>Ngày Event bắt đầu:</b></td><td><i class="fa-solid fa-calendar-day"></i> <?= $ship['start_date'] ? htmlspecialchars($ship['start_date']) : '---' ?></td></tr>
@@ -237,22 +248,15 @@ include 'sidebar.php';
                     <tr>
                         <th>HẠNG MỤC NGHIỆP VỤ</th>
                         <th style="text-align: center;">TỔNG SỐ LƯỢNG</th>
-                        <th style="text-align: center;">CHƯA LÀM</th>
+                        <th style="text-align: center;">CHƯA LÀM / THIẾT LẬP</th>
                         <th style="text-align: center;">ĐANG TRIỂN KHAI</th>
                         <th style="text-align: center;">ĐÃ HOÀN THÀNH</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><b>📦 Vật tư thiết bị (Materials)</b></td>
-                        <td style="text-align: center;"><span class="badge bg-info"><?= $stats['vattu_count'] ?></span></td>
-                        <td style="text-align: center; color: #999;">---</td>
-                        <td style="text-align: center; color: #999;">---</td>
-                        <td style="text-align: center; color: #999;">---</td>
-                    </tr>
-                    <tr>
-                        <td><b>📝 Ghi chú kỹ thuật (Notes)</b></td>
-                        <td style="text-align: center;"><span class="badge bg-info"><?= $stats['ghichu_count'] ?></span></td>
+                        <td><b>📋 Hạng mục kiểm tra (Inspection Items)</b></td>
+                        <td style="text-align: center;"><span class="badge bg-info"><?= $stats['inspection_count'] ?></span></td>
                         <td style="text-align: center; color: #999;">---</td>
                         <td style="text-align: center; color: #999;">---</td>
                         <td style="text-align: center; color: #999;">---</td>
@@ -282,19 +286,19 @@ include 'sidebar.php';
             </table>
         </div>
 
-        <?php if (count($type_ships_data) > 1): 
+        <?php if (count($compare_ships_data) > 1): 
             $labels = []; $actual_hours_dataset = []; $efficiency_dataset = [];
-            foreach ($type_ships_data as $t_ship) {
-                $labels[] = $t_ship['project_name'];
-                $actual_hours_dataset[] = (float)$t_ship['actual_hours'];
+            foreach ($compare_ships_data as $c_ship) {
+                $labels[] = $c_ship['project_name'];
+                $actual_hours_dataset[] = (float)$c_ship['actual_hours'];
                 
-                $eff_val = ((float)$t_ship['actual_hours'] > 0) ? round(((float)$t_ship['man_hours'] / (float)$t_ship['actual_hours']) * 100, 1) : 0;
+                $eff_val = ((float)$c_ship['actual_hours'] > 0) ? round(((float)$c_ship['man_hours'] / (float)$c_ship['actual_hours']) * 100, 1) : 0;
                 $efficiency_dataset[] = $eff_val;
             }
         ?>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
-                var ctx = document.getElementById('typeCompareChart').getContext('2d');
+                var ctx = document.getElementById('seriesCompareChart').getContext('2d');
                 var compareChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -351,7 +355,7 @@ include 'sidebar.php';
     <?php else: ?>
         <div style="text-align: center; padding: 60px; color: #7f8c8d; border: 2px dashed #bdc3c7; border-radius: 12px; background: #fafafa;">
             <i class="fa-solid fa-chart-pie" style="font-size: 45px; color: #bdc3c7; margin-bottom: 15px;"></i>
-            <p style="font-size: 15px; font-weight: bold; margin: 0;">Vui lòng lựa chọn một Dự án Tàu ở menu phía trên để xuất dữ liệu báo cáo tổng hợp theo phân loại sê-ri tàu.</p>
+            <p style="font-size: 15px; font-weight: bold; margin: 0;">Vui lòng lựa chọn một Dự án Tàu ở menu phía trên để xuất dữ liệu báo cáo tổng hợp hệ thống.</p>
         </div>
     <?php endif; ?>
 </div>
