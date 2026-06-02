@@ -6,6 +6,10 @@ ob_start();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Đồng bộ biến kiểm tra đăng nhập giống hệt index.php của bạn
+$header_is_logged_in = isset($_SESSION['user']);
+$header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSION['user']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -23,40 +27,13 @@ if (session_status() === PHP_SESSION_NONE) {
             background-color: #f0f2f5; /* Màu nền xám nhạt của trang */
         }
 
-        /* 1. Dòng thông báo màu xám trên cùng */
-        .top-info-bar {
-            background-color: #f1f3f4;
-            color: #5f6368;
-            font-size: 14px;
-            padding: 8px 15px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-        }
-
-        /* Icon ứng dụng nhỏ ở đầu dòng */
-        .app-icon {
-            margin-right: 10px;
-            color: #5f6368;
-        }
-
-        /* Phần link màu xanh trong dòng thông báo */
-        .top-info-bar a {
-            color: #1a73e8;
-            text-decoration: none;
-            margin: 0 3px;
-        }
-        .top-info-bar a:hover {
-            text-decoration: underline;
-        }
-
         /* TÙY BIẾN CHO USER BAR ĐẸP MẮT TRÊN THANH XANH */
         .header-content-wrapper {
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px; /* Khớp với độ rộng max-width của index.php */
             margin: 0 auto;
             padding: 0 15px;
         }
@@ -84,61 +61,19 @@ if (session_status() === PHP_SESSION_NONE) {
             color: #fff;
             text-decoration: none;
             font-weight: bold;
-            background: #d93025;
-            padding: 3px 10px;
+            background: #ef4444; /* Màu đỏ nút logout gốc của bạn */
+            padding: 4px 12px;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 13px;
             transition: background 0.2s;
         }
 
         .header-user-bar a.login-link {
-            background: #1a73e8;
+            background: #2563eb; /* Màu xanh nút login gốc của bạn */
         }
 
         .header-user-bar a:hover {
             opacity: 0.9;
-        }
-
-        /* 3. Khu vực khẩu hiệu và nút Admin (bên dưới thanh xanh) */
-        .sub-header-container {
-            display: flex;
-            justify-content: center; /* Căn giữa toàn bộ cụm này */
-            align-items: center;
-            padding: 10px 20px;
-            background-color: white; /* Nền trắng cho khu vực này */
-            position: relative; 
-        }
-
-        /* Câu khẩu hiệu màu đỏ */
-        .slogan {
-            color: #d93025; /* Màu đỏ */
-            font-weight: bold;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 0; /* Bỏ margin mặc định của p */
-        }
-
-        /* Nút Thoát Admin */
-        .admin-btn {
-            background-color: #e06666; /* Màu đỏ nhạt của nút */
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            text-decoration: none; /* Nếu là thẻ a */
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            position: absolute; /* Định vị cố định sang bên phải */
-            right: 20px;
-        }
-        
-        .admin-btn:hover {
-            background-color: #cc0000; /* Màu khi di chuột qua */
         }
 
         /* Phần nội dung chính (main) sẽ bắt đầu sau header */
@@ -158,8 +93,8 @@ if (session_status() === PHP_SESSION_NONE) {
             </a>
 
             <div class="header-user-bar">
-                <?php if (isset($_SESSION['username']) && !empty($_SESSION['username'])): ?>
-                    <span>👋 Chào, <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
+                <?php if ($header_is_logged_in): ?>
+                    <span>👋 Chào, <strong><?= htmlspecialchars($header_display_name); ?></strong></span>
                     <a href="logout.php">Đăng xuất</a>
                 <?php else: ?>
                     <span>❌ Bạn chưa đăng nhập</span>
@@ -181,7 +116,7 @@ if (session_status() === PHP_SESSION_NONE) {
             "HÃY TRỞ VỀ NHÀ AN TOÀN NHƯ LÚC CHÚNG TA ĐI LÀM!",
             "HÃY CHÚ Ý CẨN THẬN TRƯỚC KHI LÀM VIỆC, KHÔNG AI BẢO VỆ BẠN TỐT HƠN CHÍNH BẠN!",
             "ĐỪNG CHỜ ĐỢI SỰ MAY MẮN, HÃY NỔ LỰC ĐỂ AN TOÀN!",
-            "HÃY CHÚ Ý CẨN THẬN TRƯỚC KHI LÀM VIỆC, KHÔNG AI BẢO VỆ BẠN TỐT HƠN CHÍNH BẠN!"
+            "ĐỪNG CHỜ ĐỢI SỰ MAY MẮN, HÃY NỔ LỰC ĐỂ AN TOÀN!"
         ];
         
         // Lấy ngẫu nhiên 1 trong 5 dòng
@@ -190,6 +125,6 @@ if (session_status() === PHP_SESSION_NONE) {
     
     <div style="background: #fff; border-bottom: 1px solid #eee;">
         <marquee behavior="scroll" direction="left" style="color: red; font-weight: bold; padding: 5px 0;">
-            <?php echo $random_msg; ?>
+            <?= $random_msg; ?>
         </marquee>
     </div>
