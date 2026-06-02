@@ -62,14 +62,6 @@ if (isset($user['is_control_section']) && $user['is_control_section'] == 1) {
     $control_status = "Control section";
 }
 
-// Câu chào theo thời gian thực
-date_default_timezone_set('Asia/Ho_Chi_Minh');
-$hour = date('H');
-if ($hour < 12) $greet = "Chào buổi sáng";
-elseif ($hour < 18) $greet = "Chào buổi chiều";
-else $greet = "Chào buổi tối";
-
-// Nhúng header và sidebar (Thanh lời chào user-bar tầng 2 từ header.php vẫn sẽ xuất hiện bình thường)
 include 'header.php';
 include 'sidebar.php';
 ?>
@@ -86,18 +78,10 @@ include 'sidebar.php';
     .profile-banner { height: 130px; background: linear-gradient(135deg, var(--primary), #11998e); position: relative; }
     .avatar-box { position: absolute; bottom: -40px; left: 40px; width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; color: var(--primary); border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-    .profile-body { padding: 60px 40px 40px 40px; }
+    /* Điều chỉnh lại padding top của body cho đẹp khi bỏ thanh nav cũ */
+    .profile-body { padding: 50px 40px 40px 40px; }
 
-    /* Thanh điều hướng phụ */
-    .top-nav-bar { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 15px 20px; border-radius: 10px; margin-bottom: 30px; border-left: 5px solid var(--primary); }
-    .top-nav-bar h3 { margin: 0; font-size: 16px; color: var(--dark); }
-    .nav-actions a { text-decoration: none; font-size: 13px; font-weight: 600; margin-left: 15px; transition: 0.2s; }
-    .link-home { color: var(--dark); }
-    .link-home:hover { color: var(--primary); }
-    .link-logout { color: #e74c3c; }
-    .link-logout:hover { color: #c0392b; }
-
-    /* Form */
+    /* Form Layout */
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
     .form-group label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 5px; }
@@ -112,7 +96,7 @@ include 'sidebar.php';
     .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-    @media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } .top-nav-bar { flex-direction: column; gap: 10px; text-align: center; } }
+    @media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
 </style>
 
 <div class="profile-container">
@@ -124,16 +108,6 @@ include 'sidebar.php';
         </div>
 
         <div class="profile-body">
-            <div class="top-nav-bar">
-                <h3><?= $greet ?>, <b><?= htmlspecialchars($user['fullname']) ?></b> 👋</h3>
-                <div class="nav-actions">
-                    <a href="index.php" class="link-home"><i class="fas fa-home"></i> Về trang chính</a>
-                    <a href="logout.php" class="link-logout" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất?')">
-                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                    </a>
-                </div>
-            </div>
-
             <?= $message ?>
 
             <form method="POST">
