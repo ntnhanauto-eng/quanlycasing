@@ -139,7 +139,7 @@ include 'sidebar.php';
 <div class="container">
     <div class="header-section">
         <h2>📈 QUẢN LÝ TIẾN ĐỘ TÀU</h2>
-        </div>
+    </div>
 
     <?php if ($error_message): ?>
         <div class="alert-error"><?php echo $error_message; ?></div>
@@ -218,7 +218,7 @@ include 'sidebar.php';
                                     <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                     <button type="submit" class="btn btn-delete">Xóa</button>
                                 </form>
-                            <?php carriage else: ?>
+                            <?php else: ?>
                                 <span style="font-size: 11px; color:#999;">Chỉ xem</span>
                             <?php endif; ?>
                         </td>
