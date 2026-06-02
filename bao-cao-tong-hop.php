@@ -8,12 +8,12 @@ $is_admin = ($is_logged_in && isset($_SESSION['role']) && $_SESSION['role'] === 
 $user_fullname = $_SESSION['fullname'] ?? '';
 
 // --- 1. LẤY DANH SÁCH TÀU ĐỂ LỌC ---
-$ships_list = $conn->query("SELECT id, project_name, fac FROM ships ORDER BY project_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$ships_list = $conn->query("SELECT id, project_name, ship_type FROM ships ORDER BY project_name ASC")->fetchAll(PDO::FETCH_ASSOC);
 $selected_ship_id = $_GET['ship_id'] ?? '';
 
 // Khởi tạo các biến chứa dữ liệu báo cáo
 $ship = null;
-$serial_ships_data = [];
+$type_ships_data = [];
 $stats = [
     'vattu_count' => 0,
     'ghichu_count' => 0,
@@ -43,19 +43,19 @@ if ($selected_ship_id) {
     $ship = $ship_stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($ship) {
-        $current_fac = $ship['fac'];
+        $current_type = $ship['ship_type']; // Lấy loại tàu (Ví dụ: 50K, 115K)
 
-        // B. Lấy dữ liệu sê-ri (Các tàu cùng Fac) để phục vụ vẽ biểu đồ so sánh
-        if (!empty($current_fac)) {
-            $serial_stmt = $conn->prepare("
+        // B. Lấy dữ liệu toàn bộ các tàu CÙNG LOẠI TÀU để vẽ biểu đồ so sánh sê-ri
+        if (!empty($current_type)) {
+            $type_stmt = $conn->prepare("
                 SELECT s.id, s.project_name, s.man_hours,
                     (SELECT COALESCE(SUM(dr.worker_count), 0) * 8 FROM daily_reports dr WHERE dr.ship_id = s.id) as actual_hours
                 FROM ships s
-                WHERE s.fac = ?
+                WHERE s.ship_type = ?
                 ORDER BY s.project_name ASC
             ");
-            $serial_stmt->execute([$current_fac]);
-            $serial_ships_data = $serial_stmt->fetchAll(PDO::FETCH_ASSOC);
+            $type_stmt->execute([$current_type]);
+            $type_ships_data = $type_stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         // C. Thống kê số lượng vật tư & ghi chú kỹ thuật
@@ -111,7 +111,6 @@ include 'sidebar.php';
     .filter-box { background: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #dee2e6; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; }
     .filter-box select { padding: 10px 15px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; min-width: 280px; outline: none; }
     
-    /* Giao diện khối dữ liệu tổng quát */
     .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
     .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eef2f5; box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 15px; }
     .stat-icon { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; }
@@ -119,20 +118,17 @@ include 'sidebar.php';
     .stat-label { font-size: 12px; color: #6c757d; font-weight: bold; text-transform: uppercase; }
     .stat-value { font-size: 20px; font-weight: 800; color: #212529; margin-top: 2px; }
 
-    /* Layout khu vực biểu đồ và chi tiết nghiệp vụ */
     .report-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 30px; }
     .chart-panel { background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #eef2f5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
     .chart-container { position: relative; height: 320px; width: 100%; }
     .panel-title { font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 0; margin-bottom: 20px; border-left: 4px solid #28a745; padding-left: 10px; text-transform: uppercase; }
     
-    /* Danh sách tiến độ và quản lý đầu việc cụ thể */
     .detail-panel { background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #eef2f5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
     .progress-section { background: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #ced4da; margin-bottom: 15px; text-align: center; }
     .progress-num { font-size: 40px; font-weight: 900; color: #28a745; line-height: 1; }
     .progress-bar-bg { background: #e9ecef; border-radius: 20px; height: 12px; overflow: hidden; margin-top: 10px; }
     .progress-bar-fill { background: linear-gradient(90deg, #28a745, #20c997); height: 100%; border-radius: 20px; }
 
-    /* Thiết kế bảng dữ liệu thống kê đầu mục công việc */
     .table-spec { width: 100%; border-collapse: collapse; font-size: 13px; }
     .table-spec th { background: #f1f3f5; color: #495057; font-weight: bold; padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6; }
     .table-spec td { padding: 10px; border-bottom: 1px solid #eceff1; }
@@ -150,23 +146,22 @@ include 'sidebar.php';
 
 <div class="container">
     <div class="header-section">
-        <h2>📊 BÁO CÁO TỔNG HỢP & PHÂN TÍCH DỰ ÁN</h2>
+        <h2>📊 BÁO CÁO TỔNG HỢP & PHÂN TÍCH THEO PHÂN LOẠI TÀU</h2>
     </div>
 
     <div class="filter-box">
         <label for="ship_select"><b><i class="fa-solid fa-ship"></i> Chọn dự án tàu phân tích:</b></label>
         <select id="ship_select" onchange="location.href='?ship_id='+this.value">
-            <option value="">-- Click chọn dự án tàu dữ liệu --</option>
+            <option value="">-- Chọn dự án tàu dữ liệu --</option>
             <?php foreach ($ships_list as $s): ?>
                 <option value="<?= $s['id'] ?>" <?= ($selected_ship_id == $s['id']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($s['project_name']) ?> (<?= htmlspecialchars($s['fac'] ?? 'N/A') ?>)
+                    <?= htmlspecialchars($s['project_name']) ?> (Loại: <?= htmlspecialchars($s['ship_type'] ?? 'N/A') ?>)
                 </option>
             <?php endforeach; ?>
         </select>
     </div>
 
     <?php if ($ship): 
-        // Tính toán các thông số hiệu quả thi công chung
         $mh_pp = (float)$ship['man_hours'];
         $mh_act = (float)$ship['actual_hours'];
         $efficiency = ($mh_act > 0) ? round(($mh_pp / $mh_act) * 100, 1) : 0;
@@ -205,13 +200,13 @@ include 'sidebar.php';
 
         <div class="report-layout">
             <div class="chart-panel">
-                <h3 class="panel-title"><i class="fa-solid fa-chart-bar"></i> Biểu đồ so sánh giờ thực tế & hiệu quả sê-ri (FAC: <?= htmlspecialchars($ship['fac'] ?: 'N/A') ?>)</h3>
-                <?php if (count($serial_ships_data) > 1): ?>
+                <h3 class="panel-title"><i class="fa-solid fa-chart-bar"></i> Biểu đồ sê-ri so sánh các tàu cùng phân loại (LOẠI TÀU: <?= htmlspecialchars($ship['ship_type'] ?: 'N/A') ?>)</h3>
+                <?php if (count($type_ships_data) > 1): ?>
                     <div class="chart-container">
-                        <canvas id="serialCompareChart"></canvas>
+                        <canvas id="typeCompareChart"></canvas>
                     </div>
                 <?php else: ?>
-                    <p style="text-align: center; color: #888; padding-top: 100px;">Không tìm thấy tàu khác cùng sê-ri để vẽ biểu đồ so sánh.</p>
+                    <p style="text-align: center; color: #888; padding-top: 100px;">Không tìm thấy tàu khác có cùng phân loại tàu để vẽ biểu đồ so sánh.</p>
                 <?php endif; ?>
             </div>
 
@@ -227,10 +222,10 @@ include 'sidebar.php';
                 <table class="table-spec">
                     <tr><td><b>Quyền PIC phụ trách:</b></td><td><span class="badge bg-info"><i class="fa-solid fa-user-gear"></i> <?= htmlspecialchars($ship['pic']) ?></span></td></tr>
                     <tr><td><b>Phân nhóm tổ đội:</b></td><td><span class="badge bg-secondary"><?= htmlspecialchars($ship['group_name']) ?></span></td></tr>
-                    <tr><td><b>Loại hình cấu trúc:</b></td><td><?= htmlspecialchars($ship['ship_type']) ?></td></tr>
+                    <tr><td><b>Phân loại tàu:</b></td><td><span class="badge bg-dark">Loại <?= htmlspecialchars($ship['ship_type']) ?></span></td></tr>
+                    <tr><td><b>Nhà máy (Fac):</b></td><td><?= htmlspecialchars($ship['fac'] ?? 'N/A') ?></td></tr>
                     <tr><td><b>Trạng thái tàu:</b></td><td><?= htmlspecialchars($ship['status']) ?></td></tr>
-                    <tr><td><b>Ngày Event bắt đầu:</b></td><td><i class="fa-solid fa-calendar-day"></i> <?= $ship['start_date'] ? h($ship['start_date']) : '---' ?></td></tr>
-                    <tr><td><b>Ngày bàn giao thực tế:</b></td><td><i class="fa-solid fa-calendar-check"></i> <?= $ship['delivery_date'] ? h($ship['delivery_date']) : '---' ?></td></tr>
+                    <tr><td><b>Ngày Event bắt đầu:</b></td><td><i class="fa-solid fa-calendar-day"></i> <?= $ship['start_date'] ? htmlspecialchars($ship['start_date']) : '---' ?></td></tr>
                 </table>
             </div>
         </div>
@@ -242,7 +237,7 @@ include 'sidebar.php';
                     <tr>
                         <th>HẠNG MỤC NGHIỆP VỤ</th>
                         <th style="text-align: center;">TỔNG SỐ LƯỢNG</th>
-                        <th style="text-align: center;">CHƯA LÀM / THIẾT LẬP</th>
+                        <th style="text-align: center;">CHƯA LÀM</th>
                         <th style="text-align: center;">ĐANG TRIỂN KHAI</th>
                         <th style="text-align: center;">ĐÃ HOÀN THÀNH</th>
                     </tr>
@@ -287,20 +282,19 @@ include 'sidebar.php';
             </table>
         </div>
 
-        <?php if (count($serial_ships_data) > 1): 
-            // Chuẩn bị mảng dữ liệu đẩy vào Javascript
+        <?php if (count($type_ships_data) > 1): 
             $labels = []; $actual_hours_dataset = []; $efficiency_dataset = [];
-            foreach ($serial_ships_data as $s_ship) {
-                $labels[] = $s_ship['project_name'];
-                $actual_hours_dataset[] = (float)$s_ship['actual_hours'];
+            foreach ($type_ships_data as $t_ship) {
+                $labels[] = $t_ship['project_name'];
+                $actual_hours_dataset[] = (float)$t_ship['actual_hours'];
                 
-                $eff_val = ((float)$s_ship['actual_hours'] > 0) ? round(((float)$s_ship['man_hours'] / (float)$s_ship['actual_hours']) * 100, 1) : 0;
+                $eff_val = ((float)$t_ship['actual_hours'] > 0) ? round(((float)$t_ship['man_hours'] / (float)$t_ship['actual_hours']) * 100, 1) : 0;
                 $efficiency_dataset[] = $eff_val;
             }
         ?>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
-                var ctx = document.getElementById('serialCompareChart').getContext('2d');
+                var ctx = document.getElementById('typeCompareChart').getContext('2d');
                 var compareChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -333,23 +327,19 @@ include 'sidebar.php';
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         scales: {
                             y_hours: {
                                 type: 'linear',
                                 position: 'left',
-                                title: { display: true, text: 'Giờ công thực tế (Giờ)' },
-                                grid: { drawOnChartArea: true }
+                                title: { display: true, text: 'Giờ công thực tế (Giờ)' }
                             },
                             y_percent: {
                                 type: 'linear',
                                 position: 'right',
                                 title: { display: true, text: 'Hiệu quả (%)' },
                                 min: 0,
-                                grid: { drawOnChartArea: false } // Ẩn đường lưới để không bị rối mắt
+                                grid: { drawOnChartArea: false }
                             }
                         }
                     }
@@ -361,7 +351,7 @@ include 'sidebar.php';
     <?php else: ?>
         <div style="text-align: center; padding: 60px; color: #7f8c8d; border: 2px dashed #bdc3c7; border-radius: 12px; background: #fafafa;">
             <i class="fa-solid fa-chart-pie" style="font-size: 45px; color: #bdc3c7; margin-bottom: 15px;"></i>
-            <p style="font-size: 15px; font-weight: bold; margin: 0;">Vui lòng lựa chọn một Dự án Tàu ở menu phía trên để xuất dữ liệu báo cáo tổng hợp chi tiết.</p>
+            <p style="font-size: 15px; font-weight: bold; margin: 0;">Vui lòng lựa chọn một Dự án Tàu ở menu phía trên để xuất dữ liệu báo cáo tổng hợp theo phân loại sê-ri tàu.</p>
         </div>
     <?php endif; ?>
 </div>
