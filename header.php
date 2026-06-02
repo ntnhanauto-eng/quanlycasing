@@ -19,112 +19,148 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
     <?php include_once 'header_app.php'; ?>
     <title>Quản lý Casing</title>
     <style>
-        /* Reset CSS cơ bản để các trình duyệt hiển thị giống nhau */
+        /* Reset CSS cơ bản */
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #f0f2f5; /* Màu nền xám nhạt của trang */
+            background-color: #f0f2f5;
         }
 
-        /* TÙY BIẾN CHO USER BAR ĐẸP MẮT TRÊN THANH XANH */
-        .header-content-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 1400px; /* Khớp với độ rộng max-width của index.php */
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-
-        /* 2. Thanh tiêu đề chính màu xanh lá */
+        /* TẦNG 1: Thanh tiêu đề chính màu xanh lá */
         .main-header {
-            background-color: #28a745; /* Màu xanh lá cây */
+            background-color: #28a745;
             color: white;
             padding: 15px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* Khối hiển thị thông tin User đăng nhập */
+        .header-top-row {
+            display: flex;
+            justify-content: center; /* Căn giữa thương hiệu */
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .brand-logo {
+            text-decoration: none; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 24px; 
+            font-weight: bold;
+        }
+
+        /* TẦNG 2: Thanh phụ chứa lời chào User đặt dưới cùng header */
+        .header-bottom-bar {
+            background-color: #1e7e34; /* Màu xanh lá đậm hơn để phân tách tầng rõ rệt */
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .header-bottom-wrapper {
+            display: flex;
+            justify-content: flex-end; /* Đẩy lời chào sang góc phải màn hình */
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Cấu trúc khối chữ lời chào */
         .header-user-bar {
-            font-size: 14px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 6px 12px;
-            border-radius: 20px;
+            gap: 12px;
         }
         
+        .header-user-bar strong {
+            color: #ffffff;
+        }
+        
+        /* Nút đăng nhập / đăng xuất */
         .header-user-bar a {
             color: #fff;
             text-decoration: none;
             font-weight: bold;
-            background: #ef4444; /* Màu đỏ nút logout gốc của bạn */
+            background: #ef4444; /* Màu đỏ nút logout */
             padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 13px;
+            border-radius: 6px;
+            font-size: 12px;
             transition: background 0.2s;
         }
 
         .header-user-bar a.login-link {
-            background: #2563eb; /* Màu xanh nút login gốc của bạn */
+            background: #2563eb; /* Màu xanh nút login */
         }
 
         .header-user-bar a:hover {
             opacity: 0.9;
         }
 
-        /* Phần nội dung chính (main) sẽ bắt đầu sau header */
+        /* Phần nội dung chính (main) */
         main {
             padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto; /* Căn giữa nội dung chính */
+            max-width: 1400px;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="header-content-wrapper">
-            <a href="index.php" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: bold;">
-                <span style="font-size: 26px;">🚢</span> E/R CASING
-            </a>
-
-            <div class="header-user-bar">
-                <?php if ($header_is_logged_in): ?>
-                    <span>👋 Chào, <strong><?= htmlspecialchars($header_display_name); ?></strong></span>
-                    <a href="logout.php">Đăng xuất</a>
-                <?php else: ?>
-                    <span>❌ Bạn chưa đăng nhập</span>
-                    <a href="login.php" class="login-link">Đăng nhập</a>
-                <?php endif; ?>
+    <!-- BỐ TRÍ HEADER THEO TẦNG -->
+    <header>
+        <!-- Tầng 1: Tên ứng dụng -->
+        <div class="main-header">
+            <div class="header-top-row">
+                <a href="index.php" class="brand-logo">
+                    <span style="font-size: 26px;">🚢</span>
+                    E/R CASING
+                </a>
+                
+                <?php 
+                // Giữ nguyên file share.php nếu bạn đang dùng để chèn cấu trúc phụ
+                if (file_exists('share.php')) { include 'share.php'; } 
+                ?>
             </div>
         </div>
 
-        <?php 
-        // Giữ nguyên file share.php nếu có logic riêng bên trong
-        include 'share.php'; 
-        ?>
+        <!-- Tầng 2: Hàng dưới cùng chứa thông tin đăng nhập -->
+        <div class="header-bottom-bar">
+            <div class="header-bottom-wrapper">
+                <div class="header-user-bar">
+                    <?php if ($header_is_logged_in): ?>
+                        <span>👋 Chào, <strong><?= htmlspecialchars($header_display_name); ?></strong></span>
+                        <a href="logout.php">Đăng xuất</a>
+                    <?php else: ?>
+                        <span>❌ Bạn chưa đăng nhập</span>
+                        <a href="login.php" class="login-link">Đăng nhập</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
     </header>
 
+    <!-- PHẦN Dòng chữ chạy an toàn lao động -->
     <?php
-        // Danh sách 5 dòng chữ chạy ngẫu nhiên
         $messages = [
             "ĐỪNG CHỜ ĐỢI SỰ MAY MẮN, HÃY NỔ LỰC ĐỂ AN TOÀN!",
             "HÃY TRỞ VỀ NHÀ AN TOÀN NHƯ LÚC CHÚNG TA ĐI LÀM!",
-            "HÃY CHÚ Ý CẨN THẬN TRƯỚC KHI LÀM VIỆC, KHÔNG AI BẢO VỆ BẠN TỐT HƠN CHÍNH BẠN!",
-            "ĐỪNG CHỜ ĐỢI SỰ MAY MẮN, HÃY NỔ LỰC ĐỂ AN TOÀN!",
-            "ĐỪNG CHỜ ĐỢI SỰ MAY MẮN, HÃY NỔ LỰC ĐỂ AN TOÀN!"
+            "HÃY CHÚ Ý CẨN THẬN TRƯỚC KHI LÀM VIỆC, KHÔNG AI BẢO VỆ BẠN TỐT HƠN CHÍNH BẠN!"
         ];
-        
-        // Lấy ngẫu nhiên 1 trong 5 dòng
         $random_msg = $messages[array_rand($messages)];
     ?>
-    
     <div style="background: #fff; border-bottom: 1px solid #eee;">
-        <marquee behavior="scroll" direction="left" style="color: red; font-weight: bold; padding: 5px 0;">
+        <marquee behavior="scroll" direction="left" style="color: red; font-weight: bold; padding: 6px 0; margin: 0;">
             <?= $random_msg; ?>
         </marquee>
     </div>
