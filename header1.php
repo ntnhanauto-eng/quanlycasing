@@ -37,13 +37,13 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
 
         .header-top-row {
             display: flex;
-            justify-content: center; /* Giữ thương hiệu luôn ở chính giữa */
+            justify-content: center; /* Đảm bảo con trực tiếp (Logo) LUÔN TUYỆT ĐỐI Ở GIỮA */
             align-items: center;
             width: 100%;
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
-            position: relative; /* Làm mốc tọa độ cho nút chia sẻ cố định */
+            position: relative; /* Làm gốc tọa độ độc lập cho nút share */
             box-sizing: border-box;
         }
 
@@ -55,16 +55,20 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             gap: 10px; 
             font-size: 24px; 
             font-weight: bold;
+            white-space: nowrap; /* Không cho logo tự bẻ đôi chữ */
+            z-index: 1;
         }
 
-        /* KHỐI CHỨA NÚT CHIA SẺ CỐ ĐỊNH Ở GÓC PHẢI */
+        /* KHỐI CHỨA NÚT CHIA SẺ: Cố định bên phải, tuyệt đối không xuống dòng */
         .header-share-wrapper {
             position: absolute;
-            right: 20px; /* Định vị cố định sát lề phải của khung 1400px */
+            right: 20px; /* Ghim chặt sát lề phải của khung header */
             top: 50%;
-            transform: translateY(-50%); /* Căn giữa theo chiều dọc */
+            transform: translateY(-50%); /* Căn giữa chuẩn theo chiều dọc */
             display: flex;
             align-items: center;
+            white-space: nowrap; /* Ép toàn bộ thành phần bên trong file share.php phải nằm trên 1 dòng */
+            z-index: 2;
         }
 
         /* TẦNG 2: Thanh phụ chứa lời chào User đặt dưới cùng header */
@@ -77,7 +81,7 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
 
         .header-bottom-wrapper {
             display: flex;
-            justify-content: center; /* ĐÃ SỬA: Đổi từ flex-end sang center để canh giữa */
+            justify-content: center; /* Đã canh giữa */
             align-items: center;
             width: 100%;
             max-width: 1400px;
@@ -88,13 +92,13 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
 
         /* Cấu trúc khối chữ lời chào */
         .header-user-bar {
-            font-size: 14px; /* Tăng nhẹ kích thước cho dễ đọc */
+            font-size: 14px; 
             color: rgba(255, 255, 255, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            flex-wrap: wrap; /* TỰ ĐỘNG XUỐNG HÀNG TRÊN DI ĐỘNG - CHỐNG VỠ LAYOUT */
+            flex-wrap: wrap; 
             text-align: center;
         }
         
@@ -107,16 +111,16 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             color: #fff;
             text-decoration: none;
             font-weight: bold;
-            background: #ef4444; /* Màu đỏ nút logout */
-            padding: 6px 14px; /* Tăng nhẹ padding cho cân đối */
+            background: #ef4444; 
+            padding: 6px 14px; 
             border-radius: 6px;
             font-size: 13px;
             transition: background 0.2s;
-            white-space: nowrap; /* Giữ chữ trên nút không bị bẻ đôi */
+            white-space: nowrap; 
         }
 
         .header-user-bar a.login-link {
-            background: #2563eb; /* Màu xanh nút login */
+            background: #2563eb; 
         }
 
         .header-user-bar a:hover {
@@ -130,17 +134,16 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             margin: 0 auto;
         }
 
-        /* Tối ưu hiển thị trên thiết bị di động nhỏ */
+        /* Xử lý thu nhỏ kích thước chữ trên mobile (nếu màn hình quá bé) để không bị đè chữ */
         @media (max-width: 576px) {
+            .brand-logo {
+                font-size: 18px; /* Giảm nhẹ cỡ chữ logo trên màn hình siêu nhỏ */
+            }
             .header-top-row {
-                flex-direction: column;
-                gap: 10px;
-                padding-bottom: 5px;
+                padding: 0 10px;
             }
             .header-share-wrapper {
-                position: static; /* Trở về bình thường trên mobile để tránh đè chữ */
-                transform: none;
-                margin-top: 5px;
+                right: 10px;
             }
         }
     </style>
@@ -150,6 +153,7 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
     <header>
         <div class="main-header">
             <div class="header-top-row">
+                
                 <a href="index.php" class="brand-logo">
                     <span style="font-size: 26px;">🚢</span>
                     E/R CASING
@@ -162,6 +166,7 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
                     } 
                     ?>
                 </div>
+
             </div>
         </div>
 
