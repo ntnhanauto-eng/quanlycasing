@@ -44,20 +44,19 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             padding: 0 20px;
             box-sizing: border-box;
             
-            /* GIẢI PHÁP CHỐNG SIDEBAR CHE: 
-               Nếu Sidebar cố định chiếm chỗ (ví dụ: 250px), bạn hãy mở dòng margin-left dưới đây.
-               Nếu Sidebar dạng menu trượt đè lên, padding-left này sẽ đẩy thẳng logo vào vùng an toàn. */
-            /* padding-left: 260px; */ 
+            /* BẬT DÒNG NÀY NẾU CÓ SIDEBAR CỐ ĐỊNH BÊN TRÁI: Đổi 250px thành độ rộng sidebar của bạn */
+            /* padding-left: 250px; */
         }
 
-        /* KHỐI CHỨA CẢ LOGO VÀ SHARE NẰM GIỮA VÙNG CÒN LẠI */
+        /* KHỐI NÀY BUỘC LOGO VÀ SHARE PHẢI ĐI LIỀN NHAU - KHÔNG ĐƯỢC CHÈN LÊN NHAU */
         .logo-share-group {
-            margin: 0 auto; /* Cực kỳ quan trọng: Luôn tự đẩy khối này vào CHÍNH GIỮA vùng hiển thị sạch */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px; /* Khoảng cách trực tiếp giữa Logo và Nút Share đứng sau */
-            white-space: nowrap; /* Ép toàn bộ cụm này bắt buộc nằm trên một hàng ngang */
+            margin: 0 auto !important; /* Ép buộc toàn bộ cụm nằm chính giữa vùng trống */
+            display: flex !important;
+            flex-direction: row !important; /* Luôn xếp hàng ngang */
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 20px !important; /* Tạo khoảng cách trống 20px cố định, cấm nút share chạm vào logo */
+            white-space: nowrap !important; /* Tuyệt đối không xuống dòng */
         }
 
         .brand-logo {
@@ -68,12 +67,26 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             gap: 10px; 
             font-size: 24px; 
             font-weight: bold;
+            flex-shrink: 0 !important; /* Ép logo GIỮ NGUYÊN KÍCH THƯỚC, không cho nút share bóp nghẹt */
         }
 
-        /* KHỐI CHỨA NÚT CHIA SẺ ĐỨNG SAU LOGO */
+        /* KHỐI BẢO VỆ ĐÈ LÊN LOGO (VÔ HIỆU HÓA CSS XẤU TỪ FILE SHARE.PHP) */
         .header-share-wrapper {
-            display: inline-flex;
-            align-items: center;
+            display: inline-flex !important;
+            position: relative !important; /* Ép trả về tọa độ tự nhiên, hủy bỏ position: absolute bên trong file share */
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            margin: 0 !important; /* Xóa margin âm có hại */
+            flex-shrink: 0 !important;
+        }
+
+        /* Khống chế mọi phần tử con vô tình thừa kế CSS tuyệt đối bên trong file share.php */
+        .header-share-wrapper * {
+            position: static !important; /* Đưa tất cả icon/nút bên trong file share về dạng hiển thị tuần tự */
+            display: inline-block;
         }
 
         /* TẦNG 2: Thanh phụ chứa lời chào User đặt dưới cùng header */
@@ -93,8 +106,8 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             margin: 0 auto;
             padding: 0 20px;
             box-sizing: border-box;
-            /* Nếu thanh dưới cũng bị sidebar đè, hãy bật bệ đỡ padding này tương tự tầng 1 */
-            /* padding-left: 260px; */
+            /* Đồng bộ khoảng né sidebar với tầng 1 nếu cần */
+            /* padding-left: 250px; */
         }
 
         /* Cấu trúc khối chữ lời chào */
@@ -141,13 +154,16 @@ $header_display_name = $header_is_logged_in ? ($_SESSION['fullname'] ?? $_SESSIO
             margin: 0 auto;
         }
 
-        /* Hỗ trợ Responsive khi Sidebar thu nhỏ gọn trên Mobile */
+        /* Hỗ trợ Responsive mượt mà trên Mobile */
         @media (max-width: 768px) {
             .header-top-row, .header-bottom-wrapper {
-                padding-left: 20px !important; /* Hủy bỏ khoảng bù của Sidebar khi về Mobile */
+                padding-left: 20px !important; /* Reset khoảng bù sidebar trên mobile */
             }
             .brand-logo {
-                font-size: 20px;
+                font-size: 19px;
+            }
+            .logo-share-group {
+                gap: 10px !important;
             }
         }
     </style>
