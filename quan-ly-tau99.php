@@ -59,7 +59,7 @@ try {
     // Ghi log nếu cần thiết
 }
 
-// Lấy danh sách fullname user cho chế độ sửa của Admin
+// Lấy danh sách fullname user cho chế độ sửa của Admin và bộ lọc tìm kiếm
 $users_list = $conn->query("SELECT fullname FROM users ORDER BY fullname ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // --- 2. XỬ LÝ DỮ LIỆU ---
@@ -137,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 // --- 3. PHÂN TRANG VÀ TÌM KIẾM ---
 $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 $search_group = isset($_GET['search_group']) ? trim($_GET['search_group']) : '';
+$search_pic = isset($_GET['search_pic']) ? trim($_GET['search_pic']) : ''; // Thêm biến tìm kiếm theo PIC
 
 $where_clauses = [];
 $params = [];
@@ -149,9 +150,16 @@ if ($search_group !== '') {
     $where_clauses[] = "s.group_name = ?";
     $params[] = $search_group;
 }
+if ($search_pic !== '') { // Thêm điều kiện lọc SQL cho PIC
+    $where_clauses[] = "s.pic = ?";
+    $params[] = $search_pic;
+}
 $where_sql = count($where_clauses) > 0 ? "WHERE " . implode(" AND ", $where_clauses) : "";
 
 $groups_list = $conn->query("SELECT DISTINCT group_name FROM ships ORDER BY group_name ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+// Danh sách tất cả PIC thực tế đã gán trong bảng để phục vụ bộ lọc nâng cao
+$pics_list = $conn->query("SELECT DISTINCT pic FROM ships WHERE pic IS NOT NULL AND pic != '' ORDER BY pic ASC")->fetchAll(PDO::FETCH_COLUMN);
 
 $limit = 15;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -163,7 +171,7 @@ $stmt_total->execute($params);
 $total_rows = $stmt_total->fetchColumn();
 $total_pages = ceil($total_rows / $limit);
 
-// TRUY VẤN DỮ LIỆU TỔNG HỢP (ƯU TIÊN CHỜ DUYỆT LÊN TRÊN CÙNG THEO ID GIẢM DẦN)
+// TRUY VẤN DỮ LIỆU TỔNG HỢP
 $query = "
 SELECT s.*, 
         (SELECT COALESCE(SUM(dr.worker_count), 0) * 8 FROM daily_reports dr WHERE dr.ship_id = s.id) as actual_hours,
@@ -318,6 +326,11 @@ td{ padding:10px; font-size:14px; }
                         <?php foreach($groups_list as $g): ?><option value="<?php echo htmlspecialchars($g); ?>" <?php echo ($search_group == $g) ? 'selected' : ''; ?>><?php echo htmlspecialchars($g); ?></option><?php endforeach; ?>
                     </select>
                 </div>
+                <div class="form-group"><label>👤 Người phụ trách</label>
+                    <select name="search_pic"><option value="">-- Tất cả --</option>
+                        <?php foreach($pics_list as $p): ?><option value="<?php echo htmlspecialchars($p); ?>" <?php echo ($search_pic == $p) ? 'selected' : ''; ?>><?php echo htmlspecialchars($p); ?></option><?php endforeach; ?>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-search">TÌM KIẾM</button>
                 <button type="button" onclick="exportExcel()" class="btn btn-excel">XUẤT EXCEL</button>
                 <a href="quan-ly-tau.php" class="btn btn-clear">XÓA BỘ LỌC</a>
@@ -467,11 +480,9 @@ function enableEdit(event, id){
     event.stopPropagation();
     var row = document.getElementById('row-' + id);
     
-    // Ẩn view-mode, hiện edit-mode
     row.querySelectorAll('.view-mode').forEach(el => el.style.setProperty('display', 'none', 'important'));
     row.querySelectorAll('.edit-mode').forEach(el => el.style.setProperty('display', 'block', 'important'));
     
-    // Kích hoạt kiểm tra ẩn/hiện ô chọn Ngày bàn giao dựa trên trạng thái hiện tại lúc bấm sửa
     toggleDateAdd('edit-status-' + id, 'edit-date-container-' + id);
     
     var btnApprove = row.querySelector('.btn-approve');
@@ -537,9 +548,11 @@ function deleteShip(event, id) {
 function exportExcel(){
     const searchName = document.querySelector('input[name="search_name"]').value;
     const searchGroup = document.querySelector('select[name="search_group"]').value;
+    const searchPic = document.querySelector('select[name="search_pic"]').value; // Lấy thêm giá trị PIC khi xuất file Excel
     let url = 'export_excel.php?action=export_ships';
     url += '&search_name=' + encodeURIComponent(searchName);
     url += '&search_group=' + encodeURIComponent(searchGroup);
+    url += '&search_pic=' + encodeURIComponent(searchPic);
     window.location.href = url;
 }
 </script>
