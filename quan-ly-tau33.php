@@ -13,26 +13,6 @@ if (!empty($_SERVER['QUERY_STRING'])) {
 
 $error_message = "";
 
-// --- TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI TỪ "CHƯA THI CÔNG" SANG "ĐANG THI CÔNG" ---
-// Logic: Tìm các tàu đang có status = 'Chưa thi công' mà ngày EVENT nhỏ nhất trong daily_reports <= Ngày hiện tại
-try {
-    $current_date = date('Y-m-d');
-    $auto_update_sql = "
-        UPDATE ships s
-        SET s.status = 'Đang thi công'
-        WHERE s.status = 'Chưa thi công'
-        AND (
-            SELECT MIN(dr.report_date) 
-            FROM daily_reports dr 
-            WHERE dr.ship_id = s.id 
-            AND dr.job_content LIKE '%(EVENT)%'
-        ) <= ?
-    ";
-    $conn->prepare($auto_update_sql)->execute([$current_date]);
-} catch (PDOException $e) {
-    // Bỏ qua lỗi hoặc ghi log nếu cần để không làm gián đoạn trải nghiệm người dùng
-}
-
 // CẬP NHẬT: Lấy fullname thay vì username
 $users_list = $conn->query("SELECT fullname FROM users ORDER BY fullname ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -123,7 +103,7 @@ $stmt_total->execute($params);
 $total_rows = $stmt_total->fetchColumn();
 $total_pages = ceil($total_rows / $limit);
 
-// TRUY VẤN LẤY DỮ LIỆU TỔNG HỢP
+// TRUY VẤN LẤY DỮ LIỆU TỔNG HỢP (Thêm Khóa tàu vào status_order)
 $query = "
 SELECT s.*, 
         (SELECT COALESCE(SUM(dr.worker_count), 0) * 8 FROM daily_reports dr WHERE dr.ship_id = s.id) as actual_hours,
@@ -134,7 +114,8 @@ CASE
     WHEN s.status = 'Chưa thi công' THEN 1
     WHEN s.status = 'Đang thi công' THEN 2
     WHEN s.status = 'Đã bàn giao' THEN 3
-    ELSE 4
+    WHEN s.status = 'Khóa tàu' THEN 4
+    ELSE 5
 END as status_order
 FROM ships s
 LEFT JOIN ship_progress sp ON s.id = sp.ship_id
@@ -147,6 +128,7 @@ LIMIT $limit OFFSET $offset
 $stmt_ships = $conn->prepare($query);
 $stmt_ships->execute($params);
 $ships = $stmt_ships->fetchAll(PDO::FETCH_ASSOC);
+
 
 include 'header.php'; 
 include 'sidebar.php';
@@ -209,6 +191,7 @@ td{ padding:10px; font-size:14px; }
 .row-chua-thi-cong{ background-color:#ffc1cc !important; }
 .row-dang-thi-cong{ background-color:#fff3cd !important; }
 .row-da-ban-giao{ background-color:#d4edda !important; }
+.row-khoa-tau{ background-color:#e2e3e5 !important; color:#6c757d !important; } /* CSS riêng cho hàng bị khóa */
 .row-highlight{ outline:2px solid #6c757d; }
 .view-mode{ display:block; }
 .edit-mode{ display:none; width:100%; }
@@ -269,6 +252,7 @@ td{ padding:10px; font-size:14px; }
                         <option value="Chưa thi công">Chưa thi công</option>
                         <option value="Đang thi công">Đang thi công</option>
                         <option value="Đã bàn giao">Đã bàn giao</option>
+                        <option value="Khóa tàu">Khóa tàu</option>
                     </select>
                 </div>
                 <div class="form-group" id="date_container_add"><label>Ngày bàn giao</label><input type="date" name="delivery_date"></div>
@@ -323,6 +307,7 @@ td{ padding:10px; font-size:14px; }
                     if ($ship['status'] == 'Chưa thi công') $status_class = 'row-chua-thi-cong';
                     elseif ($ship['status'] == 'Đang thi công') $status_class = 'row-dang-thi-cong';
                     elseif ($ship['status'] == 'Đã bàn giao') $status_class = 'row-da-ban-giao';
+                    elseif ($ship['status'] == 'Khóa tàu') $status_class = 'row-khoa-tau';
 
                     $man_hours_pp = $ship['man_hours'];
                     $actual_hours = $ship['actual_hours'];
@@ -379,6 +364,7 @@ td{ padding:10px; font-size:14px; }
                                 <option value="Chưa thi công" <?php echo ($ship['status'] == 'Chưa thi công') ? 'selected' : ''; ?>>Chưa thi công</option>
                                 <option value="Đang thi công" <?php echo ($ship['status'] == 'Đang thi công') ? 'selected' : ''; ?>>Đang thi công</option>
                                 <option value="Đã bàn giao" <?php echo ($ship['status'] == 'Đã bàn giao') ? 'selected' : ''; ?>>Đã bàn giao</option>
+                                <option value="Khóa tàu" <?php echo ($ship['status'] == 'Khóa tàu') ? 'selected' : ''; ?>>Khóa tàu</option>
                             </select>
                             <?php endif; ?>
                         </td>
