@@ -328,26 +328,40 @@ include 'sidebar.php';
         .ship-default { background-color: #607d8b; }
 
         /* =========================================================================
-           CẤU HÌNH LOGIC IN ẤN TOÀN DIỆN - ÉP VỪA KHÍT 1 TRANG
+           CẤU HÌNH IN ẤN MỚI: KHÔNG BỊ ẨN, KHÔNG TRÀN TRANG, ẨN SẠCH HEADER HỆ THỐNG
            ========================================================================= */
         @media print {
-            /* 1. Ẩn triệt để toàn bộ thành phần giao diện bên ngoài file header.php / sidebar.php */
-            html, body, header, .header, sidebar, .sidebar, footer, .footer, 
-            nav, .nav, #sidebar, #header, .main-header, .main-sidebar,
+            /* 1. Ẩn hoàn toàn tất cả các thành phần trực hệ của body cũ ngoại trừ vùng lịch */
+            body > *:not(.calendar-scroller),
+            header, footer, nav, sidebar,
+            .main-header, .main-sidebar, .sidebar, #sidebar, #header,
             .btn-nav, .filter-dropdown, .print-dropdown {
                 display: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 0 !important;
-                height: 0 !important;
             }
 
-            /* 2. Ép hiển thị duy nhất vùng container lịch */
-            .calendar-scroller, .calendar-container {
+            /* 2. Đặt cấu trúc body chuẩn cho bản in */
+            html, body {
+                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                overflow: hidden !important;
+            }
+
+            /* 3. Ép Container Lịch hiển thị bung toàn màn hình in */
+            .calendar-scroller {
                 display: block !important;
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+
+            .calendar-container {
+                display: flex !important;
+                flex-direction: column !important;
                 width: 100% !important;
                 height: 100% !important;
                 min-width: 100% !important;
@@ -356,55 +370,50 @@ include 'sidebar.php';
                 padding: 0 !important;
                 border: none !important;
                 box-shadow: none !important;
-                overflow: hidden !important; /* Không cho phép cuộn hay tràn trang */
+                border-radius: 0 !important;
+                background: #fff !important;
             }
 
-            /* 3. Phân bổ chiều cao cố định cho cấu trúc lưới lịch để vừa khít 1 trang giấy */
-            body {
-                background-color: #ffffff !important;
-                height: 100vh !important;
-            }
-
-            .calendar-container {
-                display: flex !important;
-                flex-direction: column !important;
-            }
-
-            /* Tiêu đề tháng chiếm không gian nhỏ cố định */
+            /* Tiêu đề lịch căn giữa khi in */
             .calendar-header {
                 display: flex !important;
                 justify-content: center !important;
-                background-color: #ffffff !important;
+                background: #ffffff !important;
                 border-bottom: 2px solid var(--green-main) !important;
-                padding: 10px 0 !important;
+                padding: 8px 0 !important;
                 flex: 0 0 auto !important;
             }
 
-            /* Lưới lịch tự động co giãn vừa khít phần còn lại của màn hình in */
+            /* Lưới lịch chiếm trọn chiều cao còn lại của trang giấy */
             .calendar-grid {
                 flex: 1 1 auto !important;
-                grid-template-rows: auto repeat(6, 1fr) !important; /* Chia đều 6 hàng ngày bằng nhau */
-                height: calc(100% - 60px) !important;
+                grid-template-rows: auto repeat(6, 1fr) !important; /* Cố định 6 hàng chia đều */
+                height: 100% !important;
+                background: #fff !important;
             }
 
             .weekday-header {
-                padding: 8px 0 !important;
+                padding: 6px 0 !important;
             }
 
             .calendar-day {
-                min-height: 0 !important; /* Bỏ giới hạn cũ để không đẩy sập trang */
+                min-height: 0 !important; 
                 height: 100% !important;
-                padding: 4px !important; /* Thu nhỏ padding ô ngày để tăng không gian chứa chữ */
+                padding: 3px !important; /* Thu nhỏ khoảng cách để text không đẩy vỡ dòng */
             }
 
-            /* Ép trình duyệt render đúng màu sắc của background khi in */
-            .calendar-day, .event-item, .lunar-number, .sat-off-text {
+            .event-item {
+                padding: 3px 5px !important;
+                font-size: 11px !important; /* Thu nhỏ nhẹ chữ sự kiện khi in để vừa khít */
+            }
+
+            /* Bắt buộc giữ màu sắc background khi in trên Chrome/Edge/Firefox */
+            * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
         }
 
-        /* Định dạng khổ giấy in */
         @media print {
             .print-size-a4 { size: A4 landscape; }
             .print-size-a3 { size: A3 landscape; }
