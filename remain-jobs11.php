@@ -123,8 +123,8 @@ include 'sidebar.php';
     td { padding: 8px; border: 1px solid var(--border); text-align: center; transition: 0.2s; vertical-align: middle; }
     
     /* Điều chỉnh độ rộng cột Tên vật tư và Ghi chú */
-    .col-material { min-width: 300px; text-align: left; }
-    .col-notes { max-width: 200px; min-width: 150px; text-align: left; }
+    .col-material { width: 20%; min-width: 180px; text-align: left; }
+    .col-notes { width: 20%; min-width: 180px; text-align: left; }
     
     .status-chua-lam { background-color: #ffc1cc !important; }
     .status-dang-lam { background-color: #fff3cd !important; }
