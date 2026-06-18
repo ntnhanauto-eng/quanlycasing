@@ -123,7 +123,7 @@ include 'sidebar.php';
     td { padding: 8px; border: 1px solid var(--border); text-align: center; transition: 0.2s; vertical-align: middle; }
     
     /* Điều chỉnh độ rộng cột Tên vật tư và Ghi chú */
-    .col-material { width: 20%; min-width: 180px; text-align: left; }
+    .col-material { width: 22%; min-width: 180px; text-align: left; }
     .col-notes { width: 20%; min-width: 180px; text-align: left; }
     
     .status-chua-lam { background-color: #ffc1cc !important; }
