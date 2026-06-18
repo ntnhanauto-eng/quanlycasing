@@ -312,26 +312,38 @@ function toggleEdit(id, isEdit) {
     else { row.classList.remove('editing'); }
 }
 
-// Hàm JavaScript để xử lý xuất dữ liệu bảng hiện tại sang file Excel (.xlsx)
+// Hàm JavaScript mới giúp xuất dữ liệu bảng sạch sẽ, không bị lệch tiêu đề
 function exportToExcel() {
-    // Lấy bảng gốc dữ liệu
-    const originalTable = document.getElementById("dataTable");
-    
-    // Tạo một bảng tạm ẩn trong bộ nhớ để làm sạch các cột không cần thiết (như cột Thao tác)
-    const cloneTable = originalTable.cloneNode(true);
-    
-    // Loại bỏ cột cuối cùng (Thao tác / Hành động) khỏi tệp Excel xuất ra ở cả tiêu đề và hàng dữ liệu
-    const rows = cloneTable.querySelectorAll("tr");
-    rows.forEach(row => {
-        if (row.lastElementChild) {
-            row.removeChild(row.lastElementChild);
+    // 1. Lấy tất cả các hàng (tr) từ tiêu đề và thân bảng
+    const rows = document.querySelectorAll("#dataTable tr");
+    const data = [];
+
+    rows.forEach((row) => {
+        const rowData = [];
+        // Lấy tất cả các ô (th hoặc td) trong hàng đó, bỏ qua ô cuối cùng (Thao tác)
+        const cells = row.querySelectorAll("th:not(:last-child), td:not(:last-child)");
+        
+        cells.forEach((cell) => {
+            // Nếu ô đó chứa chế độ xem (view-mode), ta lấy text của view-mode để tránh lấy trùng dữ liệu trong thẻ input/textarea ẩn
+            const viewModeEl = cell.querySelector(".view-mode");
+            if (viewModeEl) {
+                rowData.push(viewModeEl.innerText.trim());
+            } else {
+                rowData.push(cell.innerText.trim());
+            }
+        });
+        
+        if (rowData.length > 0) {
+            data.push(rowData);
         }
     });
 
-    // Chuyển đổi bảng đã xử lý sạch sang định dạng Worksheet của Excel
-    const wb = XLSX.utils.table_to_book(cloneTable, { sheet: "Remain Jobs" });
+    // 2. Chuyển đổi mảng dữ liệu thuần túy (Array of Arrays) thành Worksheet
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Remain Jobs");
     
-    // Xuất tệp Excel lưu về máy người dùng
+    // 3. Xuất tệp Excel lưu về máy
     XLSX.writeFile(wb, "Remain_Jobs_Report.xlsx");
 }
 </script>
