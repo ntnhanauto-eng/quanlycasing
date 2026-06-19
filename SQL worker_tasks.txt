@@ -3,13 +3,24 @@ CREATE TABLE `worker_tasks` (
   `ship_id` INT NOT NULL,
   `task_name` VARCHAR(255) NOT NULL,          -- Tên công việc (Vd: Hàn vách hầm hàng số 2)
   `group_name` VARCHAR(100) NOT NULL,         -- Đội thi công (Vd: Tổ Vỏ 1, Tổ Sơn)
-  `leader_user` VARCHAR(50) NOT NULL,         -- Username Đội trưởng (Người báo cáo)
-  `manager_user` VARCHAR(50) NOT NULL,        -- Username Nhóm trưởng (Người giao & duyệt)
+  `leader_user` VARCHAR(50) NOT NULL,         -- Username Đội trưởng P/L (Người báo cáo)
+  `manager_user` VARCHAR(50) NOT NULL,        -- Username Nhóm trưởng G/L (Người giao & duyệt)
   `worker_count` INT DEFAULT 0,               -- Số công nhân phân bổ hôm nay
   `current_progress` INT DEFAULT 0,           -- % Tiến độ đã được DUYỆT tích lũy (0-100)
-  `pending_progress` INT DEFAULT NULL,        -- % Tiến độ Đội trưởng báo cáo buổi chiều chờ duyệt
-  `leader_note` TEXT NULL,                    -- Ghi chú/Báo cáo của Đội trưởng
+  `pending_progress` INT DEFAULT NULL,        -- % Tiến độ P/L báo cáo buổi chiều chờ duyệt
+  `leader_note` TEXT NULL,                    -- Ghi chú/Báo cáo của Đội trưởng P/L
   `status` ENUM('Chưa làm', 'Đang làm', 'Chờ duyệt', 'Hoàn thành', 'Bị từ chối') DEFAULT 'Chưa làm',
   `task_date` DATE NOT NULL,                  -- Ngày cập nhật/giao việc gần nhất
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- 1. Thiết lập khóa ngoại bảo vệ toàn vẹn dữ liệu
+  CONSTRAINT `fk_tasks_ships` 
+    FOREIGN KEY (`ship_id`) 
+    REFERENCES `ships` (`id`) 
+    ON DELETE CASCADE ON UPDATE CASCADE,
+    
+  -- 2. Tạo chỉ mục (Index) tăng tốc độ truy vấn tìm kiếm/lọc dữ liệu
+  INDEX `idx_leader_status` (`leader_user`, `status`),
+  INDEX `idx_manager_status` (`manager_user`, `status`),
+  INDEX `idx_task_date` (`task_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
