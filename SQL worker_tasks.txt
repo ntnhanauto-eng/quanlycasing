@@ -1,0 +1,15 @@
+CREATE TABLE `worker_tasks` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `ship_id` INT NOT NULL,
+  `task_name` VARCHAR(255) NOT NULL,          -- Tên công việc (Vd: Hàn vách hầm hàng số 2)
+  `group_name` VARCHAR(100) NOT NULL,         -- Đội thi công (Vd: Tổ Vỏ 1, Tổ Sơn)
+  `leader_user` VARCHAR(50) NOT NULL,         -- Username Đội trưởng (Người báo cáo)
+  `manager_user` VARCHAR(50) NOT NULL,        -- Username Nhóm trưởng (Người giao & duyệt)
+  `worker_count` INT DEFAULT 0,               -- Số công nhân phân bổ hôm nay
+  `current_progress` INT DEFAULT 0,           -- % Tiến độ đã được DUYỆT tích lũy (0-100)
+  `pending_progress` INT DEFAULT NULL,        -- % Tiến độ Đội trưởng báo cáo buổi chiều chờ duyệt
+  `leader_note` TEXT NULL,                    -- Ghi chú/Báo cáo của Đội trưởng
+  `status` ENUM('Chưa làm', 'Đang làm', 'Chờ duyệt', 'Hoàn thành', 'Bị từ chối') DEFAULT 'Chưa làm',
+  `task_date` DATE NOT NULL,                  -- Ngày cập nhật/giao việc gần nhất
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
