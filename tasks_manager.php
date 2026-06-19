@@ -8,7 +8,7 @@ $today = date('Y-m-d');
 // CẤU HÌNH PHÂN QUYỀN THEO CHUẨN G/L VÀ P/L
 // ==========================================
 $is_logged_in = isset($_SESSION['user']);
-$user_role    = $_SESSION['role'] ?? 'PL'; // Giá trị mặc định hoặc lấy từ DB: 'GL' hoặc 'PL'
+$user_role    = $_SESSION['role'] ?? 'PL'; // Giá trị quyền nhận diện: 'GL' hoặc 'PL'
 $username     = $_SESSION['user'] ?? 'user_test';
 
 if (empty($_SESSION['csrf_token'])) {
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
-    // 3. G/L PHÊ DUYỆT TIẾN ĐỘ THỰC TẾ
+    // 3. G/L PHÊ DUYỆT TIẾN ĐỘ THỰC TẾ & TỰ ĐỘNG CẬP NHẬT TIẾN ĐỘ TỔNG
     if ($_POST['action'] === 'approve_task' && $user_role === 'GL') {
         $task_id = (int)$_POST['task_id'];
         $decision = $_POST['decision']; // 'approve' hoặc 'reject'
@@ -69,11 +69,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($decision === 'approve') {
             // Lấy pending_progress đè lên current_progress, nếu đạt 100% thì chuyển Hoàn thành
             $stmt = $conn->prepare("UPDATE worker_tasks SET current_progress = pending_progress, status = IF(pending_progress = 100, 'Hoàn thành', 'Đang làm'), pending_progress = NULL WHERE id = ?");
+            $success = $stmt->execute([$task_id]);
+
+            if ($success) {
+                // Lấy ship_id của công việc vừa duyệt để tính toán lại tổng thể con tàu
+                $stmt_ship = $conn->prepare("SELECT ship_id FROM worker_tasks WHERE id = ?");
+                $stmt_ship->execute([$task_id]);
+                $ship_id = $stmt_ship->fetchColumn();
+
+                if ($ship_id) {
+                    // TỰ ĐỘNG CẬP NHẬT TIẾN ĐỘ TỔNG VÀO BẢNG SHIP_PROGRESS (Tính trung bình cộng các task nhỏ của tàu đó)
+                    $sql_update_total = "UPDATE ship_progress sp 
+                                         SET sp.progress_percent = (
+                                             SELECT ROUND(AVG(current_progress)) 
+                                             FROM worker_tasks 
+                                             WHERE ship_id = sp.ship_id
+                                         )
+                                         WHERE sp.ship_id = ?";
+                    $stmt_total = $conn->prepare($sql_update_total);
+                    $stmt_total->execute([$ship_id]);
+                }
+            }
         } else {
             // Từ chối phê duyệt, trả về trạng thái cũ cho P/L sửa lại
             $stmt = $conn->prepare("UPDATE worker_tasks SET status = 'Bị từ chối', pending_progress = NULL WHERE id = ?");
+            $success = $stmt->execute([$task_id]);
         }
-        $success = $stmt->execute([$task_id]);
+        
         echo json_encode(['success' => $success]);
         exit;
     }
@@ -109,6 +131,30 @@ body { font-family: 'Segoe UI', sans-serif; background: #f4f8fc; color: #1f2937;
 <div style="max-width: 1300px; margin: auto;">
     <h2 style="margin-bottom: 15px; font-weight: 800;">🚢 HỆ THỐNG ĐIỀU PHỐI VÀ PHÂN CHIA VIỆC CÔNG TRƯỜNG</h2>
     <p style="margin-bottom: 20px; color: #64748b;">Quyền hạn hiện tại: <strong><?= $user_role === 'GL' ? '🧳 Nhóm Trưởng (G/L)' : '🛠️ Đội Trưởng (P/L)'; ?></strong> (User: <?= htmlspecialchars($username); ?>)</p>
+
+    <div class="glass-card" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe;">
+        <h3 style="margin-top:0; font-weight:800; color:#1e40af; display: flex; align-items: center; gap: 8px;">📈 TIẾN ĐỘ TỔNG THỂ CÁC TÀU THI CÔNG</h3>
+        <?php
+        // Lấy thông tin dự án phối hợp với phần trăm tổng hợp từ bảng ship_progress
+        $stmt_main_progress = $conn->query("SELECT s.project_name, COALESCE(sp.progress_percent, 0) as progress_percent FROM ships s LEFT JOIN ship_progress sp ON s.id = sp.ship_id WHERE s.status = 'Đang thi công'");
+        $main_ships = $stmt_main_progress->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (count($main_ships) == 0):
+            echo '<p style="color:#1e40af; font-size:14px; margin:0;">Hiện tại không có tàu nào trong trạng thái Đang thi công.</p>';
+        endif;
+        foreach($main_ships as $ms):
+        ?>
+            <div style="margin-bottom: 12px; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 10px;">
+                <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom: 4px;">
+                    <span>🚢 <?= htmlspecialchars($ms['project_name']); ?></span>
+                    <span style="color:#2563eb;"><?= (int)$ms['progress_percent']; ?>% Hoàn thành</span>
+                </div>
+                <div class="progress-bar-bg" style="background:#fff; height:12px; margin-top:0;">
+                    <div class="progress-bar-fill" style="width: <?= (int)$ms['progress_percent']; ?>%; height:100%;"></div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
 
     <div class="grid-2">
         <?php if ($user_role === 'GL'): ?>
@@ -148,7 +194,7 @@ body { font-family: 'Segoe UI', sans-serif; background: #f4f8fc; color: #1f2937;
             </div>
 
             <div class="glass-card">
-                <h3 style="margin-top:0; font-weight:800; color: #b45309;">📥 Danh Sách Báo Cáo Chờ G/L Ph phê Duyệt</h3>
+                <h3 style="margin-top:0; font-weight:800; color: #b45309;">📥 Danh Sách Báo Cáo Chờ G/L Phê Duyệt</h3>
                 <div id="manager-approval-list">
                     <?php
                     $stmt = $conn->prepare("SELECT t.*, s.project_name FROM worker_tasks t JOIN ships s ON t.ship_id = s.id WHERE t.status = 'Chờ duyệt' AND t.manager_user = ?");
@@ -242,7 +288,7 @@ body { font-family: 'Segoe UI', sans-serif; background: #f4f8fc; color: #1f2937;
                             <span class="task-badge bg-<?= $badge_class; ?>"><?= $task['status']; ?></span>
                         </div>
                         <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                            👷 Tổ: <strong><?= htmlspecialchars($task['group_name']); ?></strong> (<?= (int)$task['worker_count']; ?> người) | Ngày cập nhật: <?= date('d/m/Y', strtotime($task['task_date'])); ?>
+                            👷 Tổ: <strong><?= htmlspecialchars($task['group_name']); ?></strong> (<?= (int)$task['worker_count']; ?> người) | Ngày cập nhật gần nhất: <?= date('d/m/Y', strtotime($task['task_date'])); ?>
                         </div>
                         <div style="margin-top:6px;">
                             <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
@@ -271,12 +317,11 @@ body { font-family: 'Segoe UI', sans-serif; background: #f4f8fc; color: #1f2937;
 const csrfToken = document.getElementById('global_csrf_token').value;
 const apiURL = window.location.href;
 
-// 1. G/L gửi lệnh giao việc mới hoặc việc tiếp tục ngày mai
+// 1. G/L gửi lệnh giao việc mới hoặc tiếp tục việc tồn đọng ngày mai
 function submitAssignForm() {
     const task_id = document.getElementById('edit_task_id').value;
     const ship_id = document.getElementById('ship_id').value;
     
-    // Nếu input bị disabled (khi giao tiếp việc tồn đọng), lấy giá trị ở trường ẩn hidden thay thế
     const task_name_input = document.getElementById('task_name');
     const task_name = task_name_input.disabled ? document.getElementById('task_name_hidden').value : task_name_input.value.trim();
     
@@ -312,14 +357,14 @@ function submitAssignForm() {
     }).catch(() => alert('Lỗi kết nối máy chủ.'));
 }
 
-// 2. Điền thông tin việc tồn đọng lên form để G/L giao quân số chạy tiếp vào ngày mai
+// 2. Chuyển dữ liệu việc tồn đọng lên form để G/L phân bổ quân số ngày mai
 function prepareFollowUpTask(task) {
     document.getElementById('edit_task_id').value = task.id;
     document.getElementById('ship_id').value = task.ship_id;
     
     document.getElementById('task_name').value = task.task_name;
     document.getElementById('task_name_hidden').value = task.task_name;
-    document.getElementById('task_name').disabled = true; // Khóa input UI để tránh làm đổi tên gốc của việc cũ
+    document.getElementById('task_name').disabled = true; // Khóa trường text để tránh làm đổi tên gốc của việc cũ
     
     document.getElementById('group_name').value = task.group_name;
     document.getElementById('leader_user').value = task.leader_user;
@@ -338,7 +383,7 @@ function resetForm() {
     document.getElementById('btnCancelEdit').style.display = 'none';
 }
 
-// 3. P/L nộp báo cáo ca chiều
+// 3. P/L gửi báo cáo ca chiều
 function submitReport(taskId) {
     const progress = document.getElementById('progress-input-' + taskId).value;
     const note = document.getElementById('note-input-' + taskId).value.trim();
@@ -368,7 +413,7 @@ function submitReport(taskId) {
     }).catch(() => alert('Mất kết nối Internet mạng nội bộ.'));
 }
 
-// 4. G/L đưa ra quyết định Duyệt đạt / Từ chối bắt sửa lại
+// 4. G/L Duyệt / Từ chối tiến độ báo cáo
 function approveDecision(taskId, decision) {
     const params = new URLSearchParams({
         action: 'approve_task',
@@ -381,7 +426,7 @@ function approveDecision(taskId, decision) {
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            alert(decision === 'approve' ? 'Hệ thống đã phê duyệt và cập nhật lũy kế tiến độ tổng thành công!' : 'Đã trả về trạng thái từ chối yêu cầu.');
+            alert(decision === 'approve' ? 'Hệ thống đã phê duyệt và tự động cập nhật lũy kế tiến độ tổng thành công!' : 'Đã trả về trạng thái từ chối yêu cầu.');
             location.reload();
         } else {
             alert('Không thể cập nhật quyết định.');
