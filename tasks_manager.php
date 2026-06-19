@@ -5,12 +5,21 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 $today = date('Y-m-d');
 
 // ==========================================
-// CẤU HÌNH PHÂN QUYỀN THEO CHUẨN G/L VÀ P/L
+// KIỂM TRA ĐĂNG NHẬP THỰC TẾ (BẮT BUỘC)
 // ==========================================
-$is_logged_in = isset($_SESSION['user']);
-$user_role    = $_SESSION['role'] ?? 'PL'; // Giá trị quyền nhận diện: 'GL' hoặc 'PL'
-$username     = $_SESSION['user'] ?? 'user_test';
+if (!isset($_SESSION['user']) || !isset($_SESSION['role'])) {
+    // Nếu chưa đăng nhập hoặc không có chức vụ, đá ngay về trang login
+    header('Location: login.php'); 
+    exit;
+}
 
+// Khi đã vượt qua vòng kiểm tra ở trên, an tâm lấy dữ liệu thật từ Session
+$user_role = $_SESSION['role']; // 'GL' hoặc 'PL'
+$username  = $_SESSION['user']; // Tên tài khoản thật (Ví dụ: 'thanh_gl')
+
+// ==========================================
+// TẠO CSRF TOKEN BẢO MẬT
+// ==========================================
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
