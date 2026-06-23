@@ -1,0 +1,21 @@
+Mở file index.php (hoặc file giao diện chính của bạn), 
+chèn đoạn code này vào bên trong thẻ <head>...</head> 
+để liên kết với 2 file vừa tạo:
+
+
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#007bff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<script>
+// Đăng ký Service Worker với trình duyệt
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('App PWA đã sẵn sàng!'))
+      .catch(err => console.log('Lỗi đăng ký App:', err));
+  });
+}
+</script>
