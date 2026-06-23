@@ -1,7 +1,7 @@
 {
   "name": "Tên Ứng Dụng Của Bạn",
-  "short_name": "Tên App",
-  "description": "Mô tả ngắn gọn về ứng dụng PHP của bạn",
+  "short_name": "ER-Casing",
+  "description": "Giải pháp quản lý toàn diện",
   "start_url": "/index.php",
   "display": "standalone", 
   "background_color": "#ffffff",
