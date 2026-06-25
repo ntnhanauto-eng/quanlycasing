@@ -4,9 +4,10 @@ require_once 'db_connect.php';
 
 $_SESSION['back_url'] = $_SERVER['REQUEST_URI'];
 
-// --- 1. XỬ LÝ LẤY DỮ LIỆU SỰ KIỆN TỪ DATABASE ---
-// Chỉ lấy sự kiện thuộc các tàu không bị khóa (Tàu ảo Sự kiện chung có is_locked = 0 nên sẽ luôn được hiển thị)
-$sql = "SELECT dr.report_date, dr.job_content, s.project_name 
+// =========================================================================
+// 1. XỬ LÝ LẤY DỮ LIỆU SỰ KIỆN TỪ DATABASE (Đã thêm DISTINCT để tránh trùng)
+// =========================================================================
+$sql = "SELECT DISTINCT dr.id as report_id, dr.report_date, dr.job_content, s.project_name 
         FROM daily_reports dr 
         JOIN ships s ON dr.ship_id = s.id 
         WHERE dr.job_content LIKE '%(EVENT)%'
@@ -99,7 +100,7 @@ include 'sidebar.php';
         .calendar-day.today .day-number { background: var(--primary-color); color: #fff; }
         .calendar-day.other-month { opacity: 0.35; }
         .event-list { display: flex; flex-direction: column; gap: 5px; flex-grow: 1; }
-        .event-item { font-size: 12px; font-weight: 500; padding: 5px 8px; border-radius: 4px; color: white; white-space: normal; word-break: break-word; line-height: 1.4; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .event-item { font-size: 12px; font-weight: 500; padding: 5px 8px; border-radius: 4px; color: white; white-space: normal; word-break: break-word; line-height: 1.4; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.1); height: auto !important; }
         
         /* Màu các tàu */
         .ship-color-0 { background-color: #d32f2f; }
@@ -112,15 +113,14 @@ include 'sidebar.php';
         .ship-color-7 { background-color: #c2185b; }
         .ship-default { background-color: #607d8b; }
         
-        /* MÀU CHO SỰ KIỆN CHUNG (Chữ trắng, Nền xám, không làm nổi bật) */
-        /* MÀU CHO SỰ KIỆN CHUNG (Bắt buộc nền xám, chữ trắng) */
-.ship-general-event { 
-    background-color: #6b7280 !important; /* Màu xám đậm vừa phải */
-    color: #ffffff !important;            /* Màu chữ trắng */
-    font-weight: 500 !important;
-    box-shadow: none !important; 
-    border: none !important;
-}
+        /* ĐÃ FIX: ÉP NỀN XÁM CHỮ TRẮNG CHO SỰ KIỆN CHUNG CHUẨN XÁC */
+        .ship-general-event { 
+            background-color: #6b7280 !important; 
+            color: #ffffff !important; 
+            font-weight: 500 !important;
+            box-shadow: none !important; 
+            border: none !important;
+        }
 
         @media print {
             body > *:not(.calendar-scroller), header, footer, nav, sidebar, .main-header, .main-sidebar, .sidebar, #sidebar, #header, .btn-nav, .filter-dropdown, .print-dropdown { display: none !important; }
@@ -213,7 +213,6 @@ function getLunarDate(dd, mm, yy) {
     return { day: dd, month: mm };
 }
 
-// Đồng bộ mảng dữ liệu từ SQL bảo mật chống lỗi trống
 const vesselEvents = <?= json_encode($js_events ?? []); ?>;
 const shipKeywords = <?= json_encode($ship_keywords ?? []); ?>;
 let selectedShips = [...shipKeywords, 'SỰ KIỆN CHUNG'];
@@ -295,7 +294,7 @@ function updateSelectedShipsList() {
 }
 
 let currentDate = new Date(); 
-const anchorDate = new Date(2026, 4, 23); // Ngày mốc tính SAT OFF cố định năm 2026
+const anchorDate = new Date(2026, 4, 23); 
 
 function renderCalendar(date) {
     const year = date.getFullYear();
@@ -366,29 +365,23 @@ function renderCalendar(date) {
         const dayEvents = vesselEvents.filter(ev => ev.date === dateString);
         dayEvents.sort((a, b) => getShipIndex(a.title, a.ship) - getShipIndex(b.title, b.ship));
 
+        // ĐÃ FIX TRIỆT ĐỂ: Loại bỏ hoàn toàn vòng lặp lồng nhau gây dư ô trống và lặp màu
         dayEvents.forEach(ev => {
             const isShipSelected = selectedShips.includes(ev.ship);
             if (isShipSelected) {
+                // Tách lọc làm sạch chuỗi hiển thị
+                let displayTitle = ev.title;
+                if (ev.ship === 'SỰ KIỆN CHUNG') {
+                    displayTitle = displayTitle.replace(/^SỰ KIỆN CHUNG\s*[:-]?\s*/i, '');
+                }
+                
+                // Nếu chuỗi rỗng thì bỏ qua không tạo phần tử lỗi
+                if (!displayTitle || displayTitle.trim() === '') return;
+
                 const eventDiv = document.createElement('div');
                 const colorClass = getShipColorClass(ev.title, ev.ship);
                 eventDiv.classList.add('event-item', colorClass);
-                dayEvents.forEach(ev => {
-    const isShipSelected = selectedShips.includes(ev.ship);
-    if (isShipSelected) {
-        const eventDiv = document.createElement('div');
-        const colorClass = getShipColorClass(ev.title, ev.ship);
-        eventDiv.classList.add('event-item', colorClass);
-        
-        // Loại bỏ chữ "SỰ KIỆN CHUNG:" hoặc "SỰ KIỆN CHUNG" ở đầu tiêu đề nếu có
-        let displayTitle = ev.title;
-        if (ev.ship === 'SỰ KIỆN CHUNG') {
-            displayTitle = displayTitle.replace(/^SỰ KIỆN CHUNG\s*[:-]?\s*/i, '');
-        }
-        
-        eventDiv.innerText = displayTitle;
-        eventListBox.appendChild(eventDiv);
-    }
-});
+                eventDiv.innerText = displayTitle;
                 eventListBox.appendChild(eventDiv);
             }
         });
