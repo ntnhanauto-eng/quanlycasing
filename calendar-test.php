@@ -113,7 +113,14 @@ include 'sidebar.php';
         .ship-default { background-color: #607d8b; }
         
         /* MÀU CHO SỰ KIỆN CHUNG (Chữ trắng, Nền xám, không làm nổi bật) */
-        .ship-general-event { background-color: #78716c !important; color: #ffffff !important; font-weight: normal !important; box-shadow: none !important; }
+        /* MÀU CHO SỰ KIỆN CHUNG (Bắt buộc nền xám, chữ trắng) */
+.ship-general-event { 
+    background-color: #6b7280 !important; /* Màu xám đậm vừa phải */
+    color: #ffffff !important;            /* Màu chữ trắng */
+    font-weight: 500 !important;
+    box-shadow: none !important; 
+    border: none !important;
+}
 
         @media print {
             body > *:not(.calendar-scroller), header, footer, nav, sidebar, .main-header, .main-sidebar, .sidebar, #sidebar, #header, .btn-nav, .filter-dropdown, .print-dropdown { display: none !important; }
