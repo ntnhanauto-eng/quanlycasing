@@ -1,0 +1,299 @@
+<!-- NÚT MENU (Floating Action Button) -->  
+<div class="menu-toggle" onclick="toggleSidebar()" aria-label="Mở menu">  
+    <i class="fas fa-bars"></i>  
+</div>  
+
+<!-- LỚP NỀN MỜ (Blur Overlay) -->  
+<div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>  
+
+<!-- SIDEBAR MAIN CONTAINER -->  
+<div id="sidebar" class="sidebar">  
+    <!-- BRANDING HEADER -->  
+    <div class="sidebar-header">  
+        <div class="brand-logo"><i class="fas fa-ship"></i></div>
+        <div class="brand-name">M.I.S SYSTEM</div>  
+    </div> 
+
+    <!-- VÙNG DÀNH RIÊNG CHO ADMIN -->
+    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>  
+        <div class="admin-only-section">
+            <div class="sidebar-title admin-title"><i class="fas fa-shield-alt"></i> QUẢN TRỊ VIÊN</div>
+            
+            <a href="quan-ly-thanh-vien.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'quan-ly-thanh-vien.php') ? 'active' : '' ?> btn-admin">  
+                <i class="fas fa-users-cog"></i> Quản lý thành viên  
+            </a>  
+            
+            <a href="xem-lich-su.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'xem-lich-su.php') ? 'active' : '' ?>">  
+                <i class="fas fa-history"></i> Lịch sử Users  
+            </a>  
+            
+            <a href="su-kien-chung.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'su-kien-chung.php') ? 'active' : '' ?>">  
+                <i class="fas fa-globe-asia"></i> Sự kiện chung  
+            </a>
+            
+            <a href="store.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'store.php') ? 'active' : '' ?>">  
+                <i class="fas fa-store"></i> Cửa hàng (Store)  
+            </a>  
+        </div>  
+    <?php endif; ?>
+
+    <!-- VÙNG THÀNH VIÊN ĐÃ ĐĂNG NHẬP -->
+    <?php if (isset($_SESSION['user_id'])): ?>  
+        <div class="sidebar-title"><i class="fas fa-user-shield"></i> TÀI KHOẢN</div>
+        
+        <a href="profile.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'profile.php') ? 'active' : '' ?>">  
+            <i class="fas fa-user-circle"></i> Hồ sơ cá nhân  
+        </a>  
+        
+        <a href="quanlycong.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'quanlycong.php') ? 'active' : '' ?>">  
+            <i class="fas fa-calendar-check"></i> Quản lý công  
+        </a>  
+        
+        <a href="my-job.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'my-job.php') ? 'active' : '' ?>">  
+            <i class="fas fa-sticky-note"></i> Note cá nhân  
+        </a>  
+        
+        <a href="logout.php" class="btn-logout">  
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất  
+        </a>
+    <?php endif; ?>
+
+    <!-- NHÓM CHÍNH (PLAN) -->  
+    <div class="sidebar-title"><i class="fas fa-layer-group"></i> PLAN</div>  
+    <a href="index.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'index.php') ? 'active' : '' ?>"><i class="fas fa-home"></i> Trang chính</a>  
+    <a href="quan-ly-tau.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'quan-ly-tau.php') ? 'active' : '' ?>"><i class="fas fa-ship"></i> Quản lý tàu</a>  
+    <a href="calendar.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'calendar.php') ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Kế hoạch tháng</a>  
+    <a href="du-lieu.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'du-lieu.php') ? 'active' : '' ?>"><i class="fas fa-users"></i> Nhập nhân lực</a>  
+    <a href="su-kien-tau.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'su-kien-tau.php') ? 'active' : '' ?>"><i class="fas fa-clock"></i> Sự kiện tàu</a>  
+
+    <!-- NGHIỆP VỤ (PRODUCTION) -->  
+    <div class="sidebar-title"><i class="fas fa-industry"></i> PRODUCTION</div>  
+    <a href="quan-ly-tien-do.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'quan-ly-tien-do.php') ? 'active' : '' ?>"><i class="fas fa-chart-line"></i> Tiến độ tàu</a> 
+    <a href="quan-ly-muc-kiem-tra.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'quan-ly-muc-kiem-tra.php') ? 'active' : '' ?>"><i class="fas fa-check-square"></i> Mục kiểm tra</a>  
+    <a href="vat-tu-ghi-chu.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'vat-tu-ghi-chu.php') ? 'active' : '' ?>"><i class="fas fa-box-open"></i> Vật tư - Ghi chú</a>  
+    <a href="remain-jobs.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'remain-jobs.php') ? 'active' : '' ?>"><i class="fas fa-hourglass-half"></i> Remain Jobs</a>  
+    <a href="bao-cao-tong-hop.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'bao-cao-tong-hop.php') ? 'active' : '' ?>"><i class="fas fa-poll-h"></i> Báo cáo tổng hợp</a>
+
+    <!-- HỆ THỐNG LIÊN KẾT NGOÀI -->  
+    <div class="sidebar-title"><i class="fas fa-network-wired"></i> EXTERNAL LINKS</div>  
+    <a href="3d-block.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == '3d-block.php') ? 'active' : '' ?>"><i class="fas fa-cube"></i> 3D Block</a>  
+    <a href="thoi-tiet.php" class="<?= (basename($_SERVER['SCRIPT_NAME']) == 'thoi-tiet.php') ? 'active' : '' ?>"><i class="fas fa-cloud-sun-rain"></i> Thời tiết</a>  
+
+    <a href="https://hr.hd-hvs.com/#/v10a2000/" target="_blank"><i class="fas fa-file-invoice"></i> Human Portal <i class="fas fa-external-link-alt external-icon"></i></a>  
+    <a href="https://pp.hd-hvs.com/#/v20Menu/" target="_blank"><i class="fas fa-cogs"></i> Production Sys <i class="fas fa-external-link-alt external-icon"></i></a>  
+    <a href="https://tqm.hd-hvs.com/#/v80Menu/" target="_blank"><i class="fas fa-user-shield"></i> TQM System <i class="fas fa-external-link-alt external-icon"></i></a>  
+</div>
+
+<style>  
+/* --- 1. NÚT TOGGLE MENU (STYLE HIỆN ĐẠI) --- */
+.menu-toggle {  
+    position: fixed;  
+    top: 16px;  
+    left: 16px;  
+    width: 46px;  
+    height: 46px;  
+    background: linear-gradient(135deg, #28a745, #1e7e34);  
+    color: white;  
+    font-size: 20px;  
+    border-radius: 12px;  
+    display: flex;  
+    align-items: center;  
+    justify-content: center;  
+    cursor: pointer;  
+    z-index: 2001;  
+    box-shadow: 0 4px 14px rgba(40, 167, 69, 0.3);  
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);  
+}  
+.menu-toggle:hover {  
+    transform: translateY(-2px) rotate(90deg);  
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.45);  
+}  
+.menu-toggle:active {  
+    transform: scale(0.95);  
+}  
+  
+/* --- 2. LỚP NỀN MỜ GLASSMORPHISM --- */
+.sidebar-overlay {  
+    position: fixed;  
+    inset: 0;  
+    background: rgba(15, 23, 42, 0.4);  
+    backdrop-filter: blur(4px); /* Làm mờ hậu cảnh xu hướng hiện đại */
+    opacity: 0;  
+    visibility: hidden;  
+    transition: all 0.3s ease;  
+    z-index: 1998;  
+}  
+.sidebar-overlay.active {  
+    opacity: 1;  
+    visibility: visible;  
+}  
+  
+/* --- 3. CẤU TRÚC THANH SIDEBAR --- */
+.sidebar {  
+    position: fixed;  
+    top: 0;  
+    left: -300px;  
+    width: 280px;  
+    height: 100%;  
+    background: #ffffff;  
+    z-index: 2000;  
+    overflow-y: auto;  
+    box-shadow: 6px 0 24px rgba(0,0,0,0.08);  
+    padding-bottom: 40px;  
+    transition: left 0.4s cubic-bezier(0.075, 0.82, 0.165, 1);  
+}  
+.sidebar.active {  
+    left: 0;  
+}  
+
+/* Tối ưu thanh cuộn mượt cho Sidebar (Webkit) */
+.sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}
+  
+/* --- 4. HEADER SIDEBAR GỌN GÀNG --- */
+.sidebar-header {  
+    padding: 24px 20px;  
+    background: #28a745;  
+    color: white;  
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);  
+}  
+.brand-logo {
+    font-size: 24px;
+    background: rgba(255,255,255,0.2);
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+}
+.brand-name {
+    font-size: 18px;  
+    font-weight: 800;  
+    letter-spacing: 1.5px;  
+}
+  
+/* --- 5. TIÊU ĐỀ NHÓM MENU --- */
+.sidebar-title {  
+    padding: 14px 20px 8px 20px;  
+    color: #94a3b8;  
+    font-size: 11px;  
+    font-weight: 700;  
+    letter-spacing: 1px;  
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+}  
+  
+/* --- 6. CÁC ĐƯỜNG LINK MENU --- */
+.sidebar a {  
+    display: flex;  
+    align-items: center;  
+    padding: 12px 20px;  
+    color: #475569;  
+    text-decoration: none;  
+    font-size: 14px;  
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);  
+}  
+.sidebar a i:not(.external-icon) {  
+    width: 24px;
+    font-size: 16px;
+    color: #64748b;
+    transition: color 0.2s ease;
+}  
+.sidebar a:hover {  
+    background: #f1f5f9;  
+    padding-left: 26px;  
+    color: #1e7e34;  
+}  
+.sidebar a:hover i {
+    color: #28a745;
+}
+
+/* Trạng thái trang đang mở (Active) */
+.sidebar a.active {  
+    background: #eafaf1;  
+    color: #1e7e34;  
+    font-weight: 600;  
+    border-left: 4px solid #28a745;  
+    padding-left: 22px;  
+}  
+.sidebar a.active i {
+    color: #28a745;
+}
+
+/* Icon liên kết ngoài nhỏ ở góc phải */
+.external-icon {
+    font-size: 11px !important;
+    margin-left: auto;
+    color: #cbd5e1 !important;
+}
+
+/* Nút đăng xuất đặc biệt */
+.btn-logout {
+    color: #dc3545 !important;
+}
+.btn-logout i {
+    color: #dc3545 !important;
+}
+.btn-logout:hover {
+    background: #fff5f5 !important;
+}
+  
+/* --- 7. PHÂN VÙNG ADMIN CHUYÊN NGHIỆP --- */
+.admin-only-section {  
+    background: #fbfcfe;
+    border-bottom: 1px solid #edf2f7;
+    padding-bottom: 8px;
+}  
+.admin-title {  
+    color: #e11d48;  
+}  
+.admin-only-section a:hover {  
+    background: #fff1f2;  
+    color: #e11d48;  
+}  
+.admin-only-section a:hover i {
+    color: #e11d48;
+}
+.admin-only-section a.active {  
+    background: #ffe4e6;  
+    color: #9f1239;  
+    border-left-color: #e11d48;  
+}  
+.admin-only-section a.active i {
+    color: #e11d48;
+}
+  
+/* --- 8. ĐÁP ỨNG THIẾT BỊ DI ĐỘNG --- */
+@media (max-width: 600px) {  
+    .sidebar {  
+        width: 260px;  
+    }  
+}  
+</style>  
+
+<script>  
+function toggleSidebar() {  
+    document.getElementById('sidebar').classList.add('active');  
+    document.getElementById('sidebar-overlay').classList.add('active');  
+}  
+  
+function closeSidebar() {  
+    document.getElementById('sidebar').classList.remove('active');  
+    document.getElementById('sidebar-overlay').classList.remove('active');  
+}  
+</script>
