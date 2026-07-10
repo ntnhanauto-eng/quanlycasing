@@ -183,9 +183,9 @@ function openVisitorModal() {
                 const formattedDate = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
                 
                 const row = `<tr>
-                    <td style="font-family: monospace; font-weight: bold; color: #2563eb;">\${log.ip_address}</td>
-                    <td>\${formattedDate} \${log.visit_time}</td>
-                    <td><span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;">\${log.location_info}</span></td>
+                    <td style="font-family: monospace; font-weight: bold; color: #2563eb;">${log.ip_address}</td>
+                    <td>${formattedDate} ${log.visit_time}</td>
+                    <td><span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;">${log.location_info}</span></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
